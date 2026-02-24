@@ -1,0 +1,14 @@
+{
+	"folders": [
+		{
+			"path": "."
+		},
+		{
+			"path": "../zh-en"
+		},
+		{
+			"path": "../zh-en-backend"
+		}
+	],
+	"settings": {}
+}
