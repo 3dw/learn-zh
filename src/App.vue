@@ -25,6 +25,9 @@ const getName = async () => {
       <nav>
         <RouterLink to="/">Home</RouterLink>
         <RouterLink to="/about">About</RouterLink>
+        <RouterLink to="/custom">自訂朗讀</RouterLink>
+        <RouterLink to="/three-character">三字經</RouterLink>
+        <RouterLink to="/what-is-this">AI 圖片學</RouterLink>
       </nav>
     </div>
   </header>
