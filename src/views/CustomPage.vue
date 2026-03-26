@@ -63,7 +63,7 @@
 
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref } from 'vue'
-import { ZH_TW_PREFERRED_KEYWORDS, getPreferredVoice } from '@/utils/speechVoice'
+import { ZH_TW_PREFERRED_KEYWORDS, getPreferredVoice, getVoicesAsync } from '@/utils/speechVoice'
 
 const rawText = ref(`人之初，性本善，性相近，習相遠。
 苟不教，性乃遷，教之道，貴以專。`)
@@ -123,12 +123,13 @@ const statusText = computed(() => {
   return isSpeaking.value ? '朗讀中...' : '待命中'
 })
 
-const createUtterance = () => {
+const createUtterance = async () => {
+  const voices = await getVoicesAsync()
   const utterance = new SpeechSynthesisUtterance(speechText.value)
   utterance.lang = 'zh-TW'
   utterance.rate = 0.9
 
-  const preferredVoice = getPreferredVoice('zh-TW', ZH_TW_PREFERRED_KEYWORDS)
+  const preferredVoice = getPreferredVoice('zh-TW', ZH_TW_PREFERRED_KEYWORDS, voices)
   if (preferredVoice) {
     utterance.voice = preferredVoice
     utterance.lang = preferredVoice.lang
@@ -145,7 +146,7 @@ const createUtterance = () => {
   return utterance
 }
 
-const toggleSpeech = () => {
+const toggleSpeech = async () => {
   if (typeof window === 'undefined' || !window.speechSynthesis) return
 
   if (isSpeaking.value) {
@@ -157,7 +158,7 @@ const toggleSpeech = () => {
   if (!speechText.value.trim()) return
 
   window.speechSynthesis.cancel()
-  window.speechSynthesis.speak(createUtterance())
+  window.speechSynthesis.speak(await createUtterance())
   isSpeaking.value = true
 }
 
