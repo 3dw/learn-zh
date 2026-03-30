@@ -419,6 +419,11 @@ export default defineComponent({
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
 }
 
+.word-card-list h1 {
+  color: #000 !important;
+  font-weight: bold;
+}
+
 .upload-section {
   text-align: center;
   margin-bottom: 1rem;
@@ -494,6 +499,7 @@ export default defineComponent({
 .result-title {
   font-size: 1.25rem;
   margin-bottom: 0.5rem;
+  color: #000 !important;
 }
 
 .result-card {
@@ -506,6 +512,7 @@ export default defineComponent({
 
 .result-zh {
   margin-bottom: 0.5rem;
+  color: #000 !important;
 }
 
 .result-en {
