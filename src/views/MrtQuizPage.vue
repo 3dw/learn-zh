@@ -1,13 +1,11 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import { speakTextWithPreferredVoice, ZH_TW_PREFERRED_KEYWORDS } from '../utils/speechVoice'
 
 interface Station {
   name: string
   line: string
 }
-
-const LINES = ['板南線', '淡水信義線']
 
 const ALL_STATIONS: Station[] = [
   // 板南線
@@ -23,42 +21,39 @@ const ALL_STATIONS: Station[] = [
     .map(name => ({ name, line: '淡水信義線' })),
 ]
 
-// 排除兩線共站（台北車站）
-const STATIONS = ALL_STATIONS.filter(
-  s => !(s.name === '台北車站' && s.line === '淡水信義線')
-)
-
-function pickRandom<T>(arr: T[], exclude?: T): T {
-  const pool = exclude !== undefined ? arr.filter(x => x !== exclude) : arr
-  return pool[Math.floor(Math.random() * pool.length)]!
+function shuffle<T>(arr: T[]): T[] {
+  const a = [...arr]
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[a[i], a[j]] = [a[j]!, a[i]!]
+  }
+  return a
 }
 
 function newQuestion() {
-  const station = STATIONS[Math.floor(Math.random() * STATIONS.length)]!
-  const correct = station.line
-  const wrong = pickRandom(LINES, correct)
-  const choices = Math.random() < 0.5 ? [correct, wrong] : [wrong, correct]
-  return { station, correct, choices }
+  const idx = Math.floor(Math.random() * ALL_STATIONS.length)
+  const correct = ALL_STATIONS[idx]!
+  const others = shuffle(ALL_STATIONS.filter((_, i) => i !== idx)).slice(0, 3)
+  const choices = shuffle([correct, ...others])
+  return { correct, choices }
 }
 
 const question = ref(newQuestion())
-const selected = ref<string | null>(null)
+const selected = ref<Station | null>(null)
 const score = ref(0)
 const streak = ref(0)
 const showReward = ref(false)
 const totalAnswered = ref(0)
 
-const isCorrect = computed(() => selected.value === question.value.correct)
-
 function speak() {
-  speakTextWithPreferredVoice(question.value.station.name, 'zh-TW', ZH_TW_PREFERRED_KEYWORDS)
+  speakTextWithPreferredVoice(question.value.correct.name, 'zh-TW', ZH_TW_PREFERRED_KEYWORDS)
 }
 
-function choose(line: string) {
+function choose(station: Station) {
   if (selected.value !== null) return
-  selected.value = line
+  selected.value = station
   totalAnswered.value++
-  if (line === question.value.correct) {
+  if (station.name === question.value.correct.name) {
     score.value++
     streak.value++
     if (streak.value > 0 && streak.value % 5 === 0) {
@@ -88,7 +83,7 @@ onMounted(() => {
 <template>
   <div class="mrt-quiz">
     <h1>🚇 捷運站名測驗</h1>
-    <p class="subtitle">聽站名，猜路線！</p>
+    <p class="subtitle">聽語音，選出正確的站名！</p>
 
     <!-- 獎勵畫面 -->
     <div v-if="showReward" class="reward-overlay" @click="dismissReward">
@@ -109,29 +104,29 @@ onMounted(() => {
 
     <!-- 題目 -->
     <div class="question-card">
-      <div class="station-name">{{ question.station.name }}</div>
-      <button class="btn-speak" @click="speak" title="再聽一次">🔊 朗讀</button>
-      <p class="question-text">這個站屬於哪條線？</p>
+      <button class="btn-speak" @click="speak">🔊 再聽一次</button>
+      <p class="question-text">你聽到的是哪一個捷運站？</p>
 
       <div class="choices">
         <button
-          v-for="line in question.choices"
-          :key="line"
+          v-for="station in question.choices"
+          :key="station.name"
           class="choice-btn"
           :class="{
-            correct: selected !== null && line === question.correct,
-            wrong: selected === line && line !== question.correct,
-            disabled: selected !== null && line !== question.correct && line !== selected,
+            correct: selected !== null && station.name === question.correct.name,
+            wrong: selected?.name === station.name && station.name !== question.correct.name,
+            disabled: selected !== null && station.name !== question.correct.name && selected?.name !== station.name,
           }"
-          @click="choose(line)"
+          @click="choose(station)"
         >
-          {{ line }}
+          <span class="station-name">{{ station.name }}</span>
+          <span class="station-line">{{ station.line }}</span>
         </button>
       </div>
 
       <div v-if="selected !== null" class="result">
-        <span v-if="isCorrect" class="correct-msg">✅ 答對了！</span>
-        <span v-else class="wrong-msg">❌ 答錯了，是 {{ question.correct }}</span>
+        <span v-if="selected.name === question.correct.name" class="correct-msg">✅ 答對了！</span>
+        <span v-else class="wrong-msg">❌ 答錯了，是「{{ question.correct.name }}」</span>
         <button class="btn-next" @click="next">下一題 →</button>
       </div>
     </div>
@@ -175,21 +170,13 @@ h1 {
   padding: 2rem 1.5rem;
 }
 
-.station-name {
-  font-size: 2.8rem;
-  font-weight: 700;
-  color: var(--color-heading);
-  margin-bottom: 0.75rem;
-  letter-spacing: 0.05em;
-}
-
 .btn-speak {
   background: none;
   border: 1px solid var(--color-border);
   border-radius: 8px;
-  padding: 0.3rem 0.9rem;
+  padding: 0.4rem 1rem;
   cursor: pointer;
-  font-size: 0.9rem;
+  font-size: 1rem;
   color: var(--color-text);
   margin-bottom: 1.25rem;
 }
@@ -215,21 +202,36 @@ h1 {
   border-radius: 10px;
   border: 2px solid var(--color-border);
   background: var(--color-background);
-  font-size: 1.1rem;
-  font-weight: 600;
   cursor: pointer;
   color: var(--color-text);
   transition: border-color 0.15s, background 0.15s;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .choice-btn:hover:not(.disabled) {
   border-color: hsla(160, 100%, 37%, 0.7);
 }
 
+.station-name {
+  font-size: 1.15rem;
+  font-weight: 600;
+}
+
+.station-line {
+  font-size: 0.8rem;
+  opacity: 0.55;
+}
+
 .choice-btn.correct {
   border-color: #22c55e;
   background: #f0fdf4;
   color: #166534;
+}
+
+.choice-btn.correct .station-line {
+  opacity: 0.7;
 }
 
 .choice-btn.wrong {
@@ -279,7 +281,6 @@ h1 {
   opacity: 0.85;
 }
 
-/* 獎勵overlay */
 .reward-overlay {
   position: fixed;
   inset: 0;
