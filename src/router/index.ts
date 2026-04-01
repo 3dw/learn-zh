@@ -43,7 +43,12 @@ const router = createRouter({
       component: () => import('../views/BannanLineQuizPage.vue'),
     },
     {
-      path: '/line-quiz/:lineKey(bannan|tamshui)',
+      path: '/circular-line-quiz',
+      name: 'circular-line-quiz',
+      component: () => import('../views/BannanLineQuizPage.vue'),
+    },
+    {
+      path: '/line-quiz/:lineKey(bannan|tamshui|circular)',
       name: 'line-quiz',
       component: () => import('../views/BannanLineQuizPage.vue'),
     },
