@@ -74,6 +74,23 @@ const TAMSUI_STATIONS: Station[] = [
   { id: 'R02', name: '象山', hint: '紅線南端站，登象山看夜景熱門入口' },
 ]
 
+const CIRCULAR_STATIONS: Station[] = [
+  { id: 'Y07', name: '大坪林', hint: '新店區，可轉乘松山新店線，環狀線南端起點' },
+  { id: 'Y08', name: '十四張', hint: '新店與中和交界，鄰近十四張重劃區' },
+  { id: 'Y09', name: '秀朗橋', hint: '跨越新店溪，連結新店與中和兩岸' },
+  { id: 'Y10', name: '景平', hint: '中和區景平路商圈，生活機能便利' },
+  { id: 'Y11', name: '景安', hint: '可轉乘中和新蘆線，中和區重要轉乘站' },
+  { id: 'Y12', name: '中和', hint: '中和區行政中心附近，鄰近四號公園' },
+  { id: 'Y13', name: '橋和', hint: '中和與板橋交界，橋和路沿線住宅區' },
+  { id: 'Y14', name: '中原', hint: '板橋中原路周邊，新北市住宅密集區' },
+  { id: 'Y15', name: '板新', hint: '板橋新站區，新北市行政中心附近' },
+  { id: 'Y16', name: '板橋', hint: '可轉乘板南線與台鐵高鐵，板橋最大交通樞紐' },
+  { id: 'Y17', name: '新埔民生', hint: '可轉乘板南線新埔站，板橋東側住宅區' },
+  { id: 'Y18', name: '頭前庄', hint: '可轉乘中和新蘆線，新莊與板橋交界' },
+  { id: 'Y19', name: '幸福', hint: '新莊區幸福路沿線，住宅與商業混合區' },
+  { id: 'Y20', name: '新北產業園區', hint: '可轉乘機場捷運，環狀線北端終點站' },
+]
+
 const METRO_LINES: MetroLine[] = [
   {
     key: 'bannan',
@@ -101,6 +118,19 @@ const METRO_LINES: MetroLine[] = [
     },
     stations: TAMSUI_STATIONS,
   },
+  {
+    key: 'circular',
+    badge: 'Y',
+    title: '環狀線 站名學習',
+    subtitle: 'Circular Line · 認識 14 個車站',
+    theme: {
+      color: '#c8a400',
+      colorDark: '#9a7d00',
+      colorLight: '#fdf8e1',
+      colorMid: '#f5e08a',
+    },
+    stations: CIRCULAR_STATIONS,
+  },
 ]
 
 const TOTAL_Q = 15
@@ -120,12 +150,15 @@ const lineThemeStyle = computed<Record<string, string>>(() => ({
   '--blue-mid': currentLine.value.theme.colorMid,
 }))
 
-function normalizeLineKey(value: unknown): 'bannan' | 'tamshui' {
-  return value === 'tamshui' ? 'tamshui' : 'bannan'
+function normalizeLineKey(value: unknown): 'bannan' | 'tamshui' | 'circular' {
+  if (value === 'tamshui') return 'tamshui'
+  if (value === 'circular') return 'circular'
+  return 'bannan'
 }
 
-function lineKeyFromRoutePath(path: string): 'bannan' | 'tamshui' {
+function lineKeyFromRoutePath(path: string): 'bannan' | 'tamshui' | 'circular' {
   if (path.startsWith('/tamshui-line-quiz')) return 'tamshui'
+  if (path.startsWith('/circular-line-quiz')) return 'circular'
   if (path.startsWith('/line-quiz/')) {
     const seg = path.split('/')[2] ?? ''
     return normalizeLineKey(seg)
@@ -133,9 +166,11 @@ function lineKeyFromRoutePath(path: string): 'bannan' | 'tamshui' {
   return 'bannan'
 }
 
-function pathForLine(key: 'bannan' | 'tamshui') {
+function pathForLine(key: 'bannan' | 'tamshui' | 'circular') {
   if (route.path.startsWith('/line-quiz/')) return `/line-quiz/${key}`
-  return key === 'tamshui' ? '/tamshui-line-quiz' : '/bannan-line-quiz'
+  if (key === 'tamshui') return '/tamshui-line-quiz'
+  if (key === 'circular') return '/circular-line-quiz'
+  return '/bannan-line-quiz'
 }
 
 function shuffle<T>(arr: T[]): T[] {
