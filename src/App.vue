@@ -12,7 +12,7 @@ import HelloWorld from './components/HelloWorld.vue'
         <RouterLink to="/custom">自訂朗讀</RouterLink>
         <RouterLink to="/three-character">三字經</RouterLink>
         <RouterLink to="/what-is-this">AI 圖片學</RouterLink>
-        <RouterLink to="/bannan-line-quiz">板南線測驗</RouterLink>
+        <RouterLink to="/bannan-line-quiz">捷運站名</RouterLink>
         <RouterLink to="/about">關於</RouterLink>
       </nav>
     </div>
