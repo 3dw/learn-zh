@@ -85,30 +85,4 @@ button {
   width: 100%;
 }
 
-@media (min-width: 1024px) {
-  .app-header {
-    display: flex;
-    align-items: center;
-  }
-
-  .logo {
-    margin: 0 2rem 0 0;
-  }
-
-  .wrapper {
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    width: 100%;
-    padding: 0.85rem 1.5rem;
-  }
-
-  nav {
-    text-align: right;
-    margin-left: auto;
-    font-size: 1rem;
-    padding: 0.25rem 0;
-    margin-top: 0;
-  }
-}
 </style>

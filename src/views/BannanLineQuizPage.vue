@@ -1464,10 +1464,4 @@ watch(fireworksCanvas, (c) => {
   }
 }
 
-@media (min-width: 1024px) {
-  .quiz-root {
-    margin-left: calc(-1 * var(--section-gap, 2rem));
-    margin-right: calc(-1 * var(--section-gap, 2rem));
-  }
-}
 </style>
