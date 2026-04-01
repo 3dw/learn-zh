@@ -13,6 +13,8 @@ import HelloWorld from './components/HelloWorld.vue'
         <RouterLink to="/three-character">三字經</RouterLink>
         <RouterLink to="/what-is-this">AI 圖片學</RouterLink>
         <RouterLink to="/bannan-line-quiz">捷運站名</RouterLink>
+        <RouterLink to="/mrt-quiz">語音選站名</RouterLink>
+        <a href="https://www.moedict.tw" target="_blank" rel="noopener">萌典</a>
         <RouterLink to="/about">關於</RouterLink>
       </nav>
     </div>
