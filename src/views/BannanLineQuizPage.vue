@@ -96,6 +96,7 @@ let fwParticles: Array<{
 }> = []
 let fwRunning = false
 let fwRaf: number | null = null
+let speakSessionId = 0
 
 async function refreshZhVoice() {
   if (!ttsSupported) return
@@ -104,6 +105,7 @@ async function refreshZhVoice() {
 }
 
 function stopSpeech() {
+  speakSessionId++
   if (ttsSupported) window.speechSynthesis.cancel()
   speakingOptionIndex.value = null
   replayBusy.value = false
@@ -124,13 +126,19 @@ function attachUtterance(
   /** 略降音高可減輕部分系統預設聲線的「金屬／刮耳」感 */
   u.pitch = 0.96
   u.volume = 1
-  u.onend = () => onEnd?.()
-  u.onerror = () => onEnd?.()
+  let settled = false
+  const finalize = () => {
+    if (settled) return
+    settled = true
+    onEnd?.()
+  }
+  u.onend = finalize
+  u.onerror = finalize
   return u
 }
 
 function speakText(text: string, onEnd?: () => void) {
-  if (!ttsSupported || !voiceEnabled.value) {
+  if (!ttsSupported || !voiceEnabled.value || !zhVoice.value) {
     onEnd?.()
     return
   }
@@ -139,14 +147,17 @@ function speakText(text: string, onEnd?: () => void) {
 }
 
 async function speakOptionsSequentially() {
-  if (!ttsSupported || current.value >= pool.value.length) return
+  if (!ttsSupported || !zhVoice.value || current.value >= pool.value.length) return
+  const sessionId = ++speakSessionId
   replayBusy.value = true
   window.speechSynthesis.cancel()
 
+  const prompt = '這個站叫什麼名字？'
   const opts = currentOptions.value
   let i = 0
 
-  const speakNext = () => {
+  const speakNextOption = () => {
+    if (sessionId !== speakSessionId) return
     if (i >= opts.length) {
       speakingOptionIndex.value = null
       replayBusy.value = false
@@ -154,18 +165,23 @@ async function speakOptionsSequentially() {
     }
     speakingOptionIndex.value = i
     const u = attachUtterance(opts[i]!, speechRate.value, () => {
+      if (sessionId !== speakSessionId) return
       speakingOptionIndex.value = null
       i++
-      window.setTimeout(speakNext, 300)
+      window.setTimeout(speakNextOption, 300)
     })
     window.speechSynthesis.speak(u)
   }
 
-  speakNext()
+  const intro = attachUtterance(prompt, speechRate.value, () => {
+    if (sessionId !== speakSessionId) return
+    window.setTimeout(speakNextOption, 180)
+  })
+  window.speechSynthesis.speak(intro)
 }
 
 function speakStationLabel(name: string) {
-  if (!ttsSupported || !voiceEnabled.value) return
+  if (!ttsSupported || !voiceEnabled.value || !zhVoice.value) return
   labelFlashName.value = name
   window.setTimeout(() => {
     if (labelFlashName.value === name) labelFlashName.value = null
