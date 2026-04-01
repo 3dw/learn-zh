@@ -47,6 +47,11 @@ const router = createRouter({
       name: 'line-quiz',
       component: () => import('../views/BannanLineQuizPage.vue'),
     },
+    {
+      path: '/mrt-quiz',
+      name: 'mrt-quiz',
+      component: () => import('../views/MrtQuizPage.vue'),
+    },
   ],
 })
 
