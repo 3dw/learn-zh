@@ -3,16 +3,10 @@ import { RouterLink } from 'vue-router'
 
 const features = [
   {
-    to: '/bannan-line-quiz',
-    emoji: '🚇',
-    title: '板南線站名測驗',
-    desc: '搭配路線圖與語音，認識台北捷運板南線各站中文站名。以選擇題練習，輕鬆建立生活用字庫。',
-  },
-  {
-    to: '/custom',
-    emoji: '🎙️',
-    title: '自訂朗讀',
-    desc: '輸入任何中文文字，立即聆聽標準發音。反覆練習、聽說並進，讓口語越來越自然。',
+    href: 'https://www.moedict.tw',
+    emoji: '📚',
+    title: '萌典',
+    desc: '查詢中文單字、成語、詞組的釋義與用法。',
   },
   {
     to: '/three-character',
@@ -21,10 +15,22 @@ const features = [
     desc: '從千年經典出發，三字一句，朗朗上口。在節奏中感受漢字之美，奠定紮實的文化根基。',
   },
   {
+    to: '/custom',
+    emoji: '🎙️',
+    title: '自訂朗讀',
+    desc: '輸入任何中文文字，立即聆聽標準發音。反覆練習、聽說並進，讓口語越來越自然。',
+  },
+  {
     to: '/what-is-this',
     emoji: '🤖',
     title: 'AI 圖片學',
     desc: '拍下身邊的任何物品，AI 立刻告訴你中文怎麼說。生活即教室，隨時隨地都能學中文。',
+  },
+  {
+    to: '/bannan-line-quiz',
+    emoji: '🚇',
+    title: '站名學習',
+    desc: '搭配路線圖與語音，認識台北捷運各站中文站名。以選擇題練習，輕鬆建立生活用字庫。',
   },
   {
     to: '/mrt-quiz',
@@ -44,17 +50,20 @@ const features = [
     </section>
 
     <section class="features">
-      <RouterLink
-        v-for="f in features"
-        :key="f.to"
-        :to="f.to"
-        class="feature-card"
-      >
-        <span class="feature-emoji">{{ f.emoji }}</span>
-        <h2>{{ f.title }}</h2>
-        <p>{{ f.desc }}</p>
-        <span class="cta">開始 →</span>
-      </RouterLink>
+      <div v-for="f in features" :key="f.to || f.href">
+        <RouterLink v-if="f.to" :to="f.to" class="feature-card">
+          <span class="feature-emoji">{{ f.emoji }}</span>
+          <h2>{{ f.title }}</h2>
+          <p>{{ f.desc }}</p>
+          <span class="cta">開始 →</span>
+        </RouterLink>
+        <a v-else :href="f.href" class="feature-card" target="_blank" rel="noopener">
+          <span class="feature-emoji">{{ f.emoji }}</span>
+          <h2>{{ f.title }}</h2>
+          <p>{{ f.desc }}</p>
+          <span class="cta">前往 →</span>
+        </a>
+      </div>
     </section>
   </main>
 </template>
