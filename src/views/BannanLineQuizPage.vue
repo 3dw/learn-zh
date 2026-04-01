@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { getPreferredZhTwVoice, getVoicesAsync } from '@/utils/speechVoice'
 
 type Station = { id: string; name: string; hint: string }
@@ -88,7 +89,7 @@ const METRO_LINES: MetroLine[] = [
     stations: BANNAN_STATIONS,
   },
   {
-    key: 'tamsui',
+    key: 'tamshui',
     badge: 'R',
     title: '淡水線 站名學習',
     subtitle: 'Tamsui-Xinyi Line · 認識 27 個車站',
@@ -104,7 +105,9 @@ const METRO_LINES: MetroLine[] = [
 
 const TOTAL_Q = 15
 const OPT_COLOR_CLASSES = ['opt-c0', 'opt-c1', 'opt-c2', 'opt-c3'] as const
-const selectedLineKey = ref<string>('tamsui')
+const selectedLineKey = ref<string>('bannan')
+const route = useRoute()
+const router = useRouter()
 const currentLine = computed(
   () => METRO_LINES.find((line) => line.key === selectedLineKey.value) ?? METRO_LINES[0]!,
 )
@@ -116,6 +119,24 @@ const lineThemeStyle = computed<Record<string, string>>(() => ({
   '--blue-light': currentLine.value.theme.colorLight,
   '--blue-mid': currentLine.value.theme.colorMid,
 }))
+
+function normalizeLineKey(value: unknown): 'bannan' | 'tamshui' {
+  return value === 'tamshui' ? 'tamshui' : 'bannan'
+}
+
+function lineKeyFromRoutePath(path: string): 'bannan' | 'tamshui' {
+  if (path.startsWith('/tamshui-line-quiz')) return 'tamshui'
+  if (path.startsWith('/line-quiz/')) {
+    const seg = path.split('/')[2] ?? ''
+    return normalizeLineKey(seg)
+  }
+  return 'bannan'
+}
+
+function pathForLine(key: 'bannan' | 'tamshui') {
+  if (route.path.startsWith('/line-quiz/')) return `/line-quiz/${key}`
+  return key === 'tamshui' ? '/tamshui-line-quiz' : '/bannan-line-quiz'
+}
 
 function shuffle<T>(arr: T[]): T[] {
   const a = [...arr]
@@ -422,16 +443,35 @@ watch(voiceEnabled, (on) => {
 })
 
 watch(selectedLineKey, () => {
+  const key = normalizeLineKey(selectedLineKey.value)
+  if (selectedLineKey.value !== key) selectedLineKey.value = key
+  const nextPath = pathForLine(key)
+  if (route.path !== nextPath) {
+    void router.replace(nextPath)
+  }
   initGame()
 })
 
+watch(
+  () => route.path,
+  (path) => {
+    const key = lineKeyFromRoutePath(path)
+    if (selectedLineKey.value !== key) {
+      selectedLineKey.value = key
+    }
+  },
+)
+
 onMounted(() => {
+  const initialLineKey = lineKeyFromRoutePath(route.path)
+  const shouldInitImmediately = selectedLineKey.value === initialLineKey
+  selectedLineKey.value = initialLineKey
   void refreshZhVoice()
   if (ttsSupported) {
     window.speechSynthesis.addEventListener('voiceschanged', refreshZhVoice)
   }
   initFireworks()
-  initGame()
+  if (shouldInitImmediately) initGame()
 })
 
 onBeforeUnmount(() => {
