@@ -1,0 +1,939 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>板南線站名學習遊戲</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Barlow+Condensed:wght@600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --blue: #0070BD;
+    --blue-dark: #004F8A;
+    --blue-light: #E6F3FB;
+    --blue-mid: #B5D4F4;
+    --correct: #1a7c4f;
+    --correct-bg: #e6f4ee;
+    --wrong: #b22222;
+    --wrong-bg: #fdecea;
+    --text: #1a1a2e;
+    --text-muted: #5a6070;
+    --bg: #f4f7fb;
+    --card: #ffffff;
+    --border: #d8e4f0;
+    --station-size: 12px;
+    --line-w: 6px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Noto Sans TC', sans-serif;
+    background: var(--bg);
+    min-height: 100vh;
+    color: var(--text);
+  }
+
+  /* ── HEADER ── */
+  .header {
+    background: var(--blue);
+    color: white;
+    padding: 1rem 1.5rem 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    box-shadow: 0 2px 12px rgba(0,112,189,0.25);
+  }
+  .line-badge {
+    background: white;
+    color: var(--blue);
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 700;
+    font-size: 22px;
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .header-title { font-size: 18px; font-weight: 700; }
+  .header-sub { font-size: 13px; opacity: 0.85; margin-top: 2px; }
+  .header-score {
+    margin-left: auto;
+    text-align: right;
+  }
+  .header-score .score-num {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 28px; font-weight: 700; line-height: 1;
+  }
+  .header-score .score-label { font-size: 11px; opacity: 0.75; }
+
+  /* ── PROGRESS ── */
+  .progress-bar-wrap {
+    height: 5px;
+    background: var(--blue-dark);
+  }
+  .progress-bar-fill {
+    height: 5px;
+    background: white;
+    transition: width 0.4s ease;
+  }
+
+  /* ── MAIN ── */
+  .main {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 1.25rem 1rem 2rem;
+  }
+
+  /* ── MAP SECTION ── */
+  .map-section {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 1.25rem 1rem 1rem;
+    margin-bottom: 1rem;
+    overflow: hidden;
+  }
+  .map-section-title {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-bottom: 1rem;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+  .map-scroll {
+    overflow-x: auto;
+    padding-bottom: 8px;
+  }
+  /* horizontal line map — 3 rows: label / dot+track / number */
+  .line-map {
+    display: flex;
+    align-items: stretch;
+    min-width: max-content;
+    padding: 0 16px;
+    position: relative;
+  }
+  .station-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex-shrink: 0;
+  }
+  .station-wrap + .station-wrap { margin-left: 44px; }
+
+  /* row 1 — station name, fixed height so all dots stay on same line */
+  .station-label {
+    height: 40px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text);
+    white-space: nowrap;
+    text-align: center;
+    padding-bottom: 5px;
+  }
+  .station-label.clickable {
+    cursor: pointer;
+    border-radius: 6px;
+    padding: 3px 6px 5px;
+    transition: background 0.15s;
+  }
+  .station-label.clickable:hover {
+    background: var(--blue-light);
+    color: var(--blue-dark);
+  }
+  .station-label.clickable:active {
+    background: var(--blue-mid);
+  }
+  @keyframes labelSpeak {
+    0%,100% { background: var(--blue-light); }
+    50% { background: var(--blue-mid); }
+  }
+  .station-label.label-speaking {
+    animation: labelSpeak 0.5s ease-in-out 2;
+  }
+  .station-label.hidden-label {
+    align-items: center;
+    padding-bottom: 0;
+  }
+  .station-label.hidden-label span {
+    background: #ff6b00;
+    color: white;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-weight: 700;
+    font-size: 13px;
+  }
+
+  /* row 2 — dot, with track running through it */
+  .dot-row {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 20px;
+    width: 100%;
+  }
+  /* track: rendered via a pseudo-element on each dot-row to stitch together */
+  .dot-row::before,
+  .dot-row::after {
+    content: '';
+    position: absolute;
+    top: 50%; height: var(--line-w);
+    background: var(--blue);
+    transform: translateY(-50%);
+    z-index: 0;
+  }
+  /* left half of track (hidden for first station) */
+  .dot-row::before { left: 0; width: 50%; }
+  /* right half of track (hidden for last station) */
+  .dot-row::after  { right: 0; width: 50%; }
+  .station-wrap:first-child .dot-row::before { display: none; }
+  .station-wrap:last-child  .dot-row::after  { display: none; }
+
+  .station-dot {
+    width: var(--station-size);
+    height: var(--station-size);
+    border-radius: 50%;
+    background: white;
+    border: 3px solid var(--blue);
+    position: relative;
+    z-index: 2;
+    flex-shrink: 0;
+    transition: all 0.2s;
+  }
+  .station-dot.terminal {
+    width: 16px; height: 16px;
+    background: var(--blue);
+    border-color: white;
+    border-width: 2px;
+  }
+  .station-dot.target {
+    width: 18px; height: 18px;
+    background: #ff6b00;
+    border-color: white;
+    border-width: 2px;
+    box-shadow: 0 0 0 4px rgba(255,107,0,0.2);
+    animation: pulse 1.4s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%,100% { box-shadow: 0 0 0 4px rgba(255,107,0,0.25); }
+    50% { box-shadow: 0 0 0 8px rgba(255,107,0,0.05); }
+  }
+
+  /* row 3 — station number */
+  .station-num {
+    font-size: 10px;
+    color: var(--blue);
+    margin-top: 5px;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  /* ── QUESTION ── */
+  .question-card {
+    background: var(--blue-light);
+    border: 1px solid var(--blue-mid);
+    border-radius: 12px;
+    padding: 1rem 1.25rem;
+    margin-bottom: 1rem;
+  }
+  .question-text {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--blue-dark);
+    line-height: 1.5;
+  }
+  .question-hint {
+    font-size: 16px;
+    color: var(--blue-dark);
+    opacity: 0.8;
+    margin-top: 8px;
+  }
+
+  /* ── OPTION COLOURS ── */
+  @keyframes optHighlight {
+    0%   { filter: brightness(0.82) saturate(1.4); transform: scale(1.04); }
+    50%  { filter: brightness(0.75) saturate(1.6); transform: scale(1.06); }
+    100% { filter: brightness(0.82) saturate(1.4); transform: scale(1.04); }
+  }
+  .option-btn.speaking-highlight {
+    animation: optHighlight 0.5s ease-in-out 2;
+    outline: 3px solid rgba(0,0,0,0.18);
+    outline-offset: 2px;
+  }
+  .opt-c0 { background: #FFF3CD; border-color: #F0C040; color: #5C4400; }
+  .opt-c1 { background: #D4EDDA; border-color: #5CB87A; color: #154E27; }
+  .opt-c2 { background: #D1ECF1; border-color: #5BA7B5; color: #0C4F5C; }
+  .opt-c3 { background: #F8D7DA; border-color: #E08090; color: #6B1A24; }
+  .opt-c0:hover:not(:disabled) { background: #FFE8A0; border-color: #D4A800; }
+  .opt-c1:hover:not(:disabled) { background: #B8DFC4; border-color: #3A9A5C; }
+  .opt-c2:hover:not(:disabled) { background: #B0D8E0; border-color: #3A8A98; }
+  .opt-c3:hover:not(:disabled) { background: #F0B8BE; border-color: #C05060; }
+
+  /* ── OPTIONS ── */
+  .options-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 1rem;
+  }
+  .option-btn {
+    background: var(--card);
+    border: 1.5px solid var(--border);
+    border-radius: 14px;
+    padding: 22px 12px;
+    font-family: 'Noto Sans TC', sans-serif;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--text);
+    cursor: pointer;
+    transition: all 0.15s;
+    text-align: center;
+    line-height: 1.3;
+    min-height: 76px;
+  }
+  .option-btn:hover:not(:disabled) {
+    border-color: var(--blue);
+    background: var(--blue-light);
+    color: var(--blue-dark);
+    transform: translateY(-1px);
+  }
+  .option-btn.correct {
+    background: var(--correct-bg);
+    border-color: var(--correct);
+    color: var(--correct);
+    font-weight: 700;
+  }
+  .option-btn.wrong {
+    background: var(--wrong-bg);
+    border-color: var(--wrong);
+    color: var(--wrong);
+  }
+  .option-btn.reveal {
+    background: var(--correct-bg);
+    border-color: var(--correct);
+    color: var(--correct);
+    opacity: 0.55;
+  }
+  .option-btn:disabled { cursor: default; transform: none; }
+
+  /* ── FEEDBACK ── */
+  .feedback {
+    border-radius: 10px;
+    padding: 12px 16px;
+    font-size: 14px;
+    font-weight: 500;
+    min-height: 44px;
+    display: flex; align-items: center; gap: 8px;
+    margin-bottom: 1rem;
+    transition: all 0.2s;
+  }
+  .feedback.empty { background: transparent; border: none; }
+  .feedback.correct { background: var(--correct-bg); color: var(--correct); border: 1px solid #a8d5bc; }
+  .feedback.wrong { background: var(--wrong-bg); color: var(--wrong); border: 1px solid #f5b8b8; }
+  .feedback-icon { font-size: 20px; flex-shrink: 0; }
+
+  /* ── NEXT BTN ── */
+  .next-btn {
+    width: 100%;
+    padding: 13px;
+    background: var(--blue);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-family: 'Noto Sans TC', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.15s, transform 0.1s;
+    letter-spacing: 0.5px;
+  }
+  .next-btn:hover { background: var(--blue-dark); }
+  .next-btn:active { transform: scale(0.98); }
+
+  /* ── RESULT ── */
+  .result-wrap {
+    text-align: center;
+    padding: 2rem 1rem 1rem;
+  }
+  .result-circle {
+    width: 120px; height: 120px;
+    border-radius: 50%;
+    background: var(--blue);
+    margin: 0 auto 1.25rem;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    color: white;
+    box-shadow: 0 4px 24px rgba(0,112,189,0.3);
+  }
+  .result-num {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 40px; font-weight: 700; line-height: 1;
+  }
+  .result-denom { font-size: 13px; opacity: 0.8; }
+  .result-title { font-size: 22px; font-weight: 700; margin-bottom: 0.5rem; }
+  .result-sub { font-size: 14px; color: var(--text-muted); margin-bottom: 1.75rem; }
+  .result-review {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+    text-align: left;
+  }
+  .review-title { font-size: 13px; color: var(--text-muted); margin-bottom: 10px; }
+  .review-item {
+    display: flex; align-items: center; gap: 8px;
+    padding: 6px 0;
+    font-size: 13px;
+    border-top: 1px solid var(--border);
+  }
+  .review-item:first-of-type { border-top: none; }
+  .review-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .review-dot.ok { background: var(--correct); }
+  .review-dot.ng { background: var(--wrong); }
+  .restart-btn {
+    padding: 13px 40px;
+    background: var(--blue);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-family: 'Noto Sans TC', sans-serif;
+    font-size: 15px; font-weight: 700;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .restart-btn:hover { background: var(--blue-dark); }
+
+  /* ── VOICE CONTROLS ── */
+  .voice-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 10px 14px;
+    margin-bottom: 1rem;
+  }
+  .voice-toggle {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 13px; color: var(--text-muted);
+    cursor: pointer; user-select: none;
+  }
+  .voice-toggle input[type=checkbox] { accent-color: var(--blue); width: 15px; height: 15px; cursor: pointer; }
+  .voice-toggle.on { color: var(--blue-dark); font-weight: 500; }
+  .speak-btn {
+    background: var(--blue-light);
+    border: 1px solid var(--blue-mid);
+    border-radius: 8px;
+    color: var(--blue-dark);
+    font-family: 'Noto Sans TC', sans-serif;
+    font-size: 13px; font-weight: 500;
+    padding: 5px 12px;
+    cursor: pointer;
+    display: flex; align-items: center; gap: 5px;
+    transition: background 0.15s;
+    white-space: nowrap;
+  }
+  .speak-btn:hover { background: var(--blue-mid); }
+  .speak-btn:disabled { opacity: 0.4; cursor: default; }
+  .speak-btn.speaking {
+    background: var(--blue);
+    color: white;
+    border-color: var(--blue-dark);
+  }
+  .voice-icon { font-size: 15px; line-height: 1; }
+  .voice-sep { width: 1px; height: 20px; background: var(--border); flex-shrink: 0; }
+  .speed-wrap { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-muted); margin-left: auto; }
+  .speed-wrap select {
+    font-family: 'Noto Sans TC', sans-serif;
+    font-size: 12px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 3px 6px;
+    color: var(--text);
+    background: var(--card);
+    cursor: pointer;
+  }
+  .no-tts-notice {
+    font-size: 12px; color: var(--text-muted);
+    background: #fffbe6; border: 1px solid #ffe58f;
+    border-radius: 8px; padding: 8px 12px; margin-bottom: 1rem;
+  }
+
+  /* ── FIREWORKS ── */
+  #fireworks-canvas {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    pointer-events: none;
+    z-index: 9999;
+  }
+</style>
+</head>
+<body>
+
+<canvas id="fireworks-canvas"></canvas>
+<div class="header">
+  <div class="line-badge">BL</div>
+  <div>
+    <div class="header-title">板南線 站名學習</div>
+    <div class="header-sub">Bannan Line · 認識 23 個車站</div>
+  </div>
+  <div class="header-score">
+    <div class="score-num" id="hdr-score">0</div>
+    <div class="score-label">答對題數</div>
+  </div>
+</div>
+<div class="progress-bar-wrap">
+  <div class="progress-bar-fill" id="prog-fill" style="width:0%"></div>
+</div>
+
+<div class="main" id="main-area"></div>
+
+<script>
+// ── TTS ENGINE ──
+const TTS = {
+  supported: 'speechSynthesis' in window,
+  enabled: true,
+  speed: 0.85,
+  voice: null,
+  utterance: null,
+
+  init() {
+    if (!this.supported) return;
+    const load = () => {
+      const voices = speechSynthesis.getVoices();
+      // Prefer zh-TW voices, then zh voices
+      this.voice = voices.find(v => v.lang === 'zh-TW')
+                || voices.find(v => v.lang.startsWith('zh'))
+                || voices[0] || null;
+    };
+    load();
+    speechSynthesis.onvoiceschanged = load;
+  },
+
+  speak(text, onEnd) {
+    if (!this.supported || !this.enabled) { onEnd && onEnd(); return; }
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = 'zh-TW';
+    if (this.voice) u.voice = this.voice;
+    u.rate = this.speed;
+    u.pitch = 1;
+    u.onend = () => { onEnd && onEnd(); };
+    u.onerror = () => { onEnd && onEnd(); };
+    this.utterance = u;
+    speechSynthesis.speak(u);
+  },
+
+  stop() {
+    if (this.supported) speechSynthesis.cancel();
+  }
+};
+
+TTS.init();
+const STATIONS = [
+  { id:"BL01", name:"頂埔",      hint:"板南線西端起點站，位於土城區西南角" },
+  { id:"BL02", name:"永寧",      hint:"土城區站，鄰近永寧路商圈" },
+  { id:"BL03", name:"土城",      hint:"土城區行政中心附近" },
+  { id:"BL04", name:"海山",      hint:"板橋與土城交界，鄰近海山高中" },
+  { id:"BL05", name:"亞東醫院",  hint:"緊鄰亞東紀念醫院，醫療資源豐富" },
+  { id:"BL06", name:"府中",      hint:"板橋區中心，鄰近板橋府中商圈" },
+  { id:"BL07", name:"板橋",      hint:"板橋區重要轉運站，也是台鐵板橋站" },
+  { id:"BL08", name:"新埔",      hint:"板橋東側，新埔商圈所在地" },
+  { id:"BL09", name:"江子翠",    hint:"板橋北端，鄰近新北大都會公園" },
+  { id:"BL10", name:"龍山寺",    hint:"萬華區，萬年香火鼎盛的古廟旁" },
+  { id:"BL11", name:"西門",      hint:"萬華與中正區交界，台北最熱鬧的商圈之一" },
+  { id:"BL12", name:"台北車站",  hint:"全台最大交通樞紐，多線交會" },
+  { id:"BL13", name:"善導寺",    hint:"台北東區門戶，鄰近台北市立圖書館總館" },
+  { id:"BL14", name:"忠孝新生",  hint:"東西向要道忠孝東路與新生南路交口" },
+  { id:"BL15", name:"忠孝復興",  hint:"大安區精華地帶，百貨商圈聚集" },
+  { id:"BL16", name:"忠孝敦化",  hint:"敦化南北路與忠孝東路交叉，精品街" },
+  { id:"BL17", name:"國父紀念館", hint:"鄰近國父紀念館公園，松山文創園區附近" },
+  { id:"BL18", name:"市政府",    hint:"台北市政府所在地，鄰近101大樓" },
+  { id:"BL19", name:"永春",      hint:"信義區東側，永春高中附近" },
+  { id:"BL20", name:"後山埤",    hint:"信義區與南港交界，後山埤公園" },
+  { id:"BL21", name:"昆陽",      hint:"南港區，昆陽工業區附近" },
+  { id:"BL22", name:"南港",      hint:"南港區中心，台鐵南港站轉乘" },
+  { id:"BL23", name:"南港展覽館", hint:"台北南港展覽館所在，大型展覽場地" },
+];
+
+const TOTAL_Q = 15;
+let pool, current, score, answered, history, currentOpts;
+
+function shuffle(arr) { return [...arr].sort(() => Math.random() - 0.5); }
+
+function buildPool() {
+  return shuffle([...STATIONS]).slice(0, TOTAL_Q);
+}
+
+function getOptions(target) {
+  const others = STATIONS.filter(s => s.id !== target.id);
+  const shuffled = shuffle(others).slice(0, 3).map(s => s.name);
+  return shuffle([target.name, ...shuffled]);
+}
+
+function init() {
+  pool = buildPool();
+  current = 0; score = 0; answered = false; history = [];
+  render();
+}
+
+function buildLineMap(targetIdx) {
+  // Show target station ± 2 neighbours (clamped to array bounds)
+  const start = Math.max(0, targetIdx - 2);
+  const end   = Math.min(STATIONS.length - 1, targetIdx + 2);
+  const slice = STATIONS.slice(start, end + 1);
+  const stationWidth = 96;
+  const totalW = slice.length * stationWidth + 32;
+  let html = `<div class="line-map" style="width:${totalW}px">`;
+  slice.forEach((s, i) => {
+    const isTarget  = (s.id === pool[current].id);
+    const globalIdx = start + i;
+    const isFirst   = (globalIdx === 0);
+    const isLast    = (globalIdx === STATIONS.length - 1);
+    let dotClass = "station-dot";
+    if (isFirst || isLast) dotClass = "station-dot terminal";
+    if (isTarget) dotClass = "station-dot target";
+    // left track: hide if first in slice AND first station overall
+    const hideLeft  = (i === 0 && isFirst)  ? ' style="display:none"' : '';
+    // right track: hide if last in slice AND last station overall
+    const hideRight = (i === slice.length-1 && isLast) ? ' style="display:none"' : '';
+    let labelHTML;
+    if (isTarget) {
+      labelHTML = `<div class="station-label hidden-label"><span>？</span></div>`;
+    } else {
+      labelHTML = `<div class="station-label clickable" onclick="speakStationName('${s.name}')" title="點我聽讀站名">${s.name}</div>`;
+    }
+    html += `<div class="station-wrap" ${i===0?'style="--is-first:1"':''}>
+      ${labelHTML}
+      <div class="dot-row">${hideLeft||hideRight ? buildTrackHtml(i===0&&isFirst, i===slice.length-1&&isLast) : ''}<div class="${dotClass}"></div></div>
+      <div class="station-num">${s.id}</div>
+    </div>`;
+  });
+  html += `</div>`;
+  return html;
+}
+
+function buildTrackHtml(hideLeft, hideRight) {
+  // We abuse inline styles on ::before/::after via a wrapper trick:
+  // Instead, we'll handle this with a data-attribute approach on .station-wrap
+  return '';
+}
+
+function buildVoiceBar() {
+  if (!TTS.supported) {
+    return `<div class="no-tts-notice">此瀏覽器不支援語音播報功能，建議使用 Chrome 或 Edge。</div>`;
+  }
+  return `
+    <div class="voice-bar">
+      <label class="voice-toggle ${TTS.enabled ? 'on' : ''}" id="voice-toggle-label">
+        <input type="checkbox" id="voice-toggle" ${TTS.enabled ? 'checked' : ''}
+          onchange="toggleVoice(this)">
+        語音播報
+      </label>
+      <div class="voice-sep"></div>
+      <button class="speak-btn" id="speak-btn" onclick="speakOptions()" title="重新播報題目">
+        <span class="voice-icon">&#128264;</span> 再聽一次
+      </button>
+      <div class="speed-wrap">
+        速度：
+        <select id="speed-sel" onchange="changeSpeed(this.value)">
+          <option value="0.6" ${TTS.speed===0.6?'selected':''}>慢速</option>
+          <option value="0.85" ${TTS.speed===0.85?'selected':''}>正常</option>
+          <option value="1.1" ${TTS.speed===1.1?'selected':''}>快速</option>
+        </select>
+      </div>
+    </div>`;
+}
+
+function toggleVoice(cb) {
+  TTS.enabled = cb.checked;
+  const label = document.getElementById('voice-toggle-label');
+  if (label) label.className = 'voice-toggle ' + (TTS.enabled ? 'on' : '');
+  if (!TTS.enabled) TTS.stop();
+}
+
+function changeSpeed(val) {
+  TTS.speed = parseFloat(val);
+}
+
+function speakOptions() {
+  if (current >= pool.length || !TTS.supported) return;
+  const btn = document.getElementById('speak-btn');
+  if (btn) { btn.classList.add('speaking'); btn.disabled = true; }
+  speechSynthesis.cancel();
+
+  // Build timed highlights: speak each option separately with a pause
+  // Use sequential utterances so we can highlight per option
+  let i = 0;
+  function speakNext() {
+    if (i >= currentOpts.length) {
+      const b = document.getElementById('speak-btn');
+      if (b) { b.classList.remove('speaking'); b.disabled = false; }
+      return;
+    }
+    highlightOption(i);
+    const u = new SpeechSynthesisUtterance(currentOpts[i]);
+    u.lang = 'zh-TW';
+    if (TTS.voice) u.voice = TTS.voice;
+    u.rate = TTS.speed;
+    u.pitch = 1;
+    u.onend = () => { i++; setTimeout(speakNext, 300); };
+    u.onerror = () => { i++; setTimeout(speakNext, 300); };
+    speechSynthesis.speak(u);
+  }
+  speakNext();
+}
+
+function speakStationName(name) {
+  if (!TTS.supported) return;
+  // Find the label element and animate it
+  const labels = document.querySelectorAll('.station-label.clickable');
+  labels.forEach(el => {
+    if (el.textContent === name) {
+      el.classList.remove('label-speaking');
+      void el.offsetWidth; // reflow to restart animation
+      el.classList.add('label-speaking');
+      setTimeout(() => el.classList.remove('label-speaking'), 1000);
+    }
+  });
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(name);
+  u.lang = 'zh-TW';
+  if (TTS.voice) u.voice = TTS.voice;
+  u.rate = TTS.speed;
+  speechSynthesis.speak(u);
+}
+
+function speakFeedback(isRight, name) {
+  if (!TTS.enabled || !TTS.supported) return;
+  const msg = isRight ? `答對了！這站是${name}` : `答錯了，正確答案是${name}`;
+  TTS.speak(msg);
+}
+
+function shuffleColors() {
+  const cols = ['opt-c0','opt-c1','opt-c2','opt-c3'];
+  for (let i = cols.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [cols[i], cols[j]] = [cols[j], cols[i]];
+  }
+  return cols;
+}
+
+function highlightOption(idx) {
+  const btns = document.querySelectorAll('.option-btn');
+  if (btns[idx]) {
+    btns[idx].classList.add('speaking-highlight');
+    setTimeout(() => btns[idx].classList.remove('speaking-highlight'), 1000);
+  }
+}
+
+function render() {
+  const area = document.getElementById('main-area');
+  document.getElementById('hdr-score').textContent = score;
+  document.getElementById('prog-fill').style.width = Math.round(current / TOTAL_Q * 100) + '%';
+  TTS.stop();
+
+  if (current >= TOTAL_Q) {
+    renderResult(area); return;
+  }
+
+  const q = pool[current];
+  const opts = getOptions(q);
+  currentOpts = opts;
+  const targetIdx = STATIONS.findIndex(s => s.id === q.id);
+
+  area.innerHTML = `
+    ${buildVoiceBar()}
+    <div class="map-section">
+      <div class="map-section-title">板南線地圖 — 找出 ？ 是哪一站</div>
+      <div class="map-scroll">${buildLineMap(targetIdx)}</div>
+    </div>
+
+    <div class="question-card">
+      <div class="question-text">這個站叫什麼名字？</div>
+      <div class="question-hint">提示：${q.hint}</div>
+    </div>
+
+    <div class="options-grid">
+      ${shuffleColors().map((cls, i) => `<button class="option-btn ${cls}" data-idx="${i}" onclick="choose('${opts[i]}')">${opts[i]}</button>`).join('')}
+    </div>
+
+    <div class="feedback empty" id="fb"></div>
+    <button class="next-btn" id="next-btn" style="display:none" onclick="next()">
+      ${current < TOTAL_Q - 1 ? '下一題 →' : '查看結果 →'}
+    </button>
+  `;
+
+  // auto-scroll map to target station
+  setTimeout(() => {
+    const scroll = area.querySelector('.map-scroll');
+    if (scroll) {
+      const stationWidth = 64;
+      const scrollTo = targetIdx * stationWidth - 120;
+      scroll.scrollLeft = Math.max(0, scrollTo);
+    }
+    // auto-speak options with per-option highlight
+    if (TTS.enabled && TTS.supported) {
+      speakOptions();
+    }
+  }, 80);
+}
+
+function choose(opt) {
+  if (answered) return;
+  answered = true;
+  const q = pool[current];
+  const correct = q.name;
+  const isRight = opt === correct;
+  if (isRight) { score++; setTimeout(() => FW.launch(), 100); }
+  history.push({ station: correct, correct: isRight });
+
+  document.querySelectorAll('.option-btn').forEach(b => {
+    b.disabled = true;
+    if (b.textContent === correct && !isRight) b.classList.add('reveal');
+    if (b.textContent === opt) b.classList.add(isRight ? 'correct' : 'wrong');
+  });
+
+  const fb = document.getElementById('fb');
+  if (isRight) {
+    fb.innerHTML = `<span class="feedback-icon">✓</span> 答對了！這站是「${correct}」`;
+    fb.className = 'feedback correct';
+  } else {
+    fb.innerHTML = `<span class="feedback-icon">✗</span> 答錯了，正確答案是「${correct}」`;
+    fb.className = 'feedback wrong';
+  }
+  speakFeedback(isRight, correct);
+  document.getElementById('next-btn').style.display = 'block';
+  document.getElementById('hdr-score').textContent = score;
+}
+
+function next() {
+  TTS.stop();
+  current++; answered = false;
+  render();
+}
+
+function renderResult(area) {
+  document.getElementById('prog-fill').style.width = '100%';
+  const pct = Math.round(score / TOTAL_Q * 100);
+  let msg = score === TOTAL_Q ? '完美！全部答對！🎉' :
+            pct >= 80 ? '太棒了！非常熟練！' :
+            pct >= 60 ? '不錯喔！繼續加油！' : '多練習幾次，加油！';
+
+  const reviewHTML = history.map((h, i) => {
+    const s = pool[i];
+    return `<div class="review-item">
+      <div class="review-dot ${h.correct ? 'ok' : 'ng'}"></div>
+      <span style="color:var(--text-muted);min-width:36px;font-size:12px;">${s.id}</span>
+      <span style="font-weight:500">${h.station}</span>
+      <span style="margin-left:auto;font-size:12px;color:${h.correct ? 'var(--correct)' : 'var(--wrong)'}">
+        ${h.correct ? '✓ 答對' : '✗ 答錯'}
+      </span>
+    </div>`;
+  }).join('');
+
+  area.innerHTML = `
+    <div class="result-wrap">
+      <div class="result-circle">
+        <div class="result-num">${score}</div>
+        <div class="result-denom">/ ${TOTAL_Q} 題</div>
+      </div>
+      <div class="result-title">${msg}</div>
+      <div class="result-sub">答對率 ${pct}%，共考了 ${TOTAL_Q} 站</div>
+      <div class="result-review">
+        <div class="review-title">本次答題紀錄</div>
+        ${reviewHTML}
+      </div>
+      <button class="restart-btn" onclick="init()">再挑戰一次</button>
+    </div>`;
+
+  setTimeout(() => {
+    TTS.speak(`遊戲結束！你答對了 ${score} 題，答對率 ${pct} 百分比。${msg}`);
+  }, 300);
+}
+
+
+// ── FIREWORKS ENGINE ──
+const FW = {
+  canvas: null, ctx: null, particles: [], running: false, raf: null,
+  init() {
+    this.canvas = document.getElementById('fireworks-canvas');
+    this.ctx = this.canvas.getContext('2d');
+    this.resize();
+    window.addEventListener('resize', () => this.resize());
+  },
+  resize() {
+    this.canvas.width = window.innerWidth;
+    this.canvas.height = window.innerHeight;
+  },
+  burst(x, y, color) {
+    const count = 60;
+    for (let i = 0; i < count; i++) {
+      const angle = (Math.PI * 2 / count) * i + (Math.random() - 0.5) * 0.3;
+      const speed = 3 + Math.random() * 6;
+      this.particles.push({
+        x, y,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed,
+        alpha: 1,
+        color,
+        r: 3 + Math.random() * 3,
+        gravity: 0.12,
+        decay: 0.015 + Math.random() * 0.01
+      });
+    }
+  },
+  launch() {
+    const colors = ['#FFD700','#FF6B6B','#4ECDC4','#45B7D1','#FFA07A','#98D8C8','#F7DC6F','#BB8FCE'];
+    const w = window.innerWidth, h = window.innerHeight;
+    const spots = [
+      [w*0.25, h*0.3],[w*0.5, h*0.2],[w*0.75, h*0.3],
+      [w*0.35, h*0.45],[w*0.65, h*0.4]
+    ];
+    spots.forEach((s, i) => {
+      setTimeout(() => {
+        this.burst(s[0], s[1], colors[i % colors.length]);
+        this.burst(s[0] + (Math.random()-0.5)*80, s[1] + (Math.random()-0.5)*60, colors[(i+3) % colors.length]);
+      }, i * 120);
+    });
+    if (!this.running) this.loop();
+  },
+  loop() {
+    this.running = true;
+    const step = () => {
+      this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+      this.particles = this.particles.filter(p => p.alpha > 0.02);
+      this.particles.forEach(p => {
+        p.x += p.vx; p.y += p.vy;
+        p.vy += p.gravity;
+        p.vx *= 0.98; p.alpha -= p.decay;
+        this.ctx.save();
+        this.ctx.globalAlpha = Math.max(0, p.alpha);
+        this.ctx.fillStyle = p.color;
+        this.ctx.beginPath();
+        this.ctx.arc(p.x, p.y, p.r, 0, Math.PI*2);
+        this.ctx.fill();
+        this.ctx.restore();
+      });
+      if (this.particles.length > 0) {
+        this.raf = requestAnimationFrame(step);
+      } else {
+        this.running = false;
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+      }
+    };
+    this.raf = requestAnimationFrame(step);
+  }
+};
+
+FW.init();
+init();
+</script>
+</body>
+</html>

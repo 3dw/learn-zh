@@ -3,6 +3,12 @@ import { RouterLink } from 'vue-router'
 
 const features = [
   {
+    to: '/bannan-line-quiz',
+    emoji: '🚇',
+    title: '板南線站名測驗',
+    desc: '搭配路線圖與語音，認識台北捷運板南線各站中文站名。以選擇題練習，輕鬆建立生活用字庫。',
+  },
+  {
     to: '/custom',
     emoji: '🎙️',
     title: '自訂朗讀',

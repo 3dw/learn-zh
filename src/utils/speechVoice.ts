@@ -27,6 +27,19 @@ export function getPreferredVoice(
   return langMatch[0] || null
 }
 
+/** 優先使用 lang 為 zh-TW 的語音，避免落到 zh-CN 等聽感較生硬或未校準的預設聲線。 */
+export function getPreferredZhTwVoice(voices: SpeechSynthesisVoice[]): SpeechSynthesisVoice | null {
+  if (voices.length === 0) return null
+  const twExact = voices.filter((v) => v.lang === 'zh-TW' || v.lang === 'zh_TW')
+  const pool = twExact.length > 0 ? twExact : voices.filter((v) => v.lang.startsWith('zh'))
+  if (pool.length === 0) return null
+  for (const kw of ZH_TW_PREFERRED_KEYWORDS) {
+    const found = pool.find((v) => v.name.includes(kw) || v.lang.includes(kw))
+    if (found) return found
+  }
+  return pool[0] ?? null
+}
+
 export async function speakTextWithPreferredVoice(
   text: string,
   lang: string,
