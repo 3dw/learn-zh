@@ -3,8 +3,21 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { getPreferredZhTwVoice, getVoicesAsync } from '@/utils/speechVoice'
 
 type Station = { id: string; name: string; hint: string }
+type MetroLine = {
+  key: string
+  badge: string
+  title: string
+  subtitle: string
+  theme: {
+    color: string
+    colorDark: string
+    colorLight: string
+    colorMid: string
+  }
+  stations: Station[]
+}
 
-const STATIONS: Station[] = [
+const BANNAN_STATIONS: Station[] = [
   { id: 'BL01', name: '頂埔', hint: '板南線西端起點站，位於土城區西南角' },
   { id: 'BL02', name: '永寧', hint: '土城區站，鄰近永寧路商圈' },
   { id: 'BL03', name: '土城', hint: '土城區行政中心附近' },
@@ -30,8 +43,79 @@ const STATIONS: Station[] = [
   { id: 'BL23', name: '南港展覽館', hint: '台北南港展覽館所在，大型展覽場地' },
 ]
 
+const TAMSUI_STATIONS: Station[] = [
+  { id: 'R28', name: '淡水', hint: '紅線北端站，淡水老街與河岸景點集中地' },
+  { id: 'R27', name: '紅樹林', hint: '可轉乘淡海輕軌，鄰近紅樹林自然保護區' },
+  { id: 'R26', name: '竹圍', hint: '淡水河北岸住宅區，通勤族常用站' },
+  { id: 'R25', name: '關渡', hint: '關渡宮與關渡平原周邊，亦鄰近關渡自然公園' },
+  { id: 'R24', name: '忠義', hint: '北投區北側，站體高架、周邊較寧靜' },
+  { id: 'R23', name: '復興崗', hint: '鄰近國防大學與復興崗營區' },
+  { id: 'R22', name: '北投', hint: '可轉乘新北投支線，溫泉區入口站' },
+  { id: 'R21', name: '奇岩', hint: '北投生活圈車站，靠近奇岩重劃區' },
+  { id: 'R20', name: '唭哩岸', hint: '石牌與北投交界，附近有傳統市場與商圈' },
+  { id: 'R19', name: '石牌', hint: '天母醫療與校園生活圈重要站點' },
+  { id: 'R18', name: '明德', hint: '北投南側住宅區，通勤站點' },
+  { id: 'R17', name: '芝山', hint: '天母門戶，鄰近百貨與學校' },
+  { id: 'R16', name: '士林', hint: '士林夜市與商圈主要聯外車站' },
+  { id: 'R15', name: '劍潭', hint: '可前往士林夜市與劍潭山步道' },
+  { id: 'R14', name: '圓山', hint: '花博公園與美術館周邊站點' },
+  { id: 'R13', name: '民權西路', hint: '紅線與橘線交會，往返大同與中山區便利' },
+  { id: 'R12', name: '雙連', hint: '中山北路沿線，鄰近寧夏夜市' },
+  { id: 'R11', name: '中山', hint: '雙線交會商圈站，百貨與文創聚集' },
+  { id: 'R10', name: '台北車站', hint: '北市交通樞紐，台鐵高鐵捷運交會' },
+  { id: 'R09', name: '台大醫院', hint: '中正區核心，醫療與公署機關集中' },
+  { id: 'R08', name: '中正紀念堂', hint: '紅線綠線交會，國家劇院音樂廳周邊' },
+  { id: 'R07', name: '東門', hint: '永康商圈、紅線橘線交會站' },
+  { id: 'R06', name: '大安森林公園', hint: '鄰近大安森林公園綠地' },
+  { id: 'R05', name: '大安', hint: '紅線與文湖線交會，轉乘方便' },
+  { id: 'R04', name: '信義安和', hint: '信義路商辦區與住宅區交會' },
+  { id: 'R03', name: '台北101/世貿', hint: '信義計畫區核心，台北 101 所在地' },
+  { id: 'R02', name: '象山', hint: '紅線南端站，登象山看夜景熱門入口' },
+]
+
+const METRO_LINES: MetroLine[] = [
+  {
+    key: 'bannan',
+    badge: 'BL',
+    title: '板南線 站名學習',
+    subtitle: 'Bannan Line · 認識 23 個車站',
+    theme: {
+      color: '#0070bd',
+      colorDark: '#004f8a',
+      colorLight: '#e6f3fb',
+      colorMid: '#b5d4f4',
+    },
+    stations: BANNAN_STATIONS,
+  },
+  {
+    key: 'tamsui',
+    badge: 'R',
+    title: '淡水線 站名學習',
+    subtitle: 'Tamsui-Xinyi Line · 認識 27 個車站',
+    theme: {
+      color: '#cb2c30',
+      colorDark: '#9b1f25',
+      colorLight: '#fdeced',
+      colorMid: '#f7c5c9',
+    },
+    stations: TAMSUI_STATIONS,
+  },
+]
+
 const TOTAL_Q = 15
 const OPT_COLOR_CLASSES = ['opt-c0', 'opt-c1', 'opt-c2', 'opt-c3'] as const
+const selectedLineKey = ref<string>('tamsui')
+const currentLine = computed(
+  () => METRO_LINES.find((line) => line.key === selectedLineKey.value) ?? METRO_LINES[0]!,
+)
+const currentStations = computed(() => currentLine.value.stations)
+const questionCount = computed(() => Math.min(TOTAL_Q, currentStations.value.length))
+const lineThemeStyle = computed<Record<string, string>>(() => ({
+  '--blue': currentLine.value.theme.color,
+  '--blue-dark': currentLine.value.theme.colorDark,
+  '--blue-light': currentLine.value.theme.colorLight,
+  '--blue-mid': currentLine.value.theme.colorMid,
+}))
 
 function shuffle<T>(arr: T[]): T[] {
   const a = [...arr]
@@ -45,11 +129,11 @@ function shuffle<T>(arr: T[]): T[] {
 }
 
 function buildPool(): Station[] {
-  return shuffle([...STATIONS]).slice(0, TOTAL_Q)
+  return shuffle([...currentStations.value]).slice(0, questionCount.value)
 }
 
 function getOptions(target: Station): string[] {
-  const others = STATIONS.filter((s) => s.id !== target.id)
+  const others = currentStations.value.filter((s) => s.id !== target.id)
   const shuffled = shuffle(others)
     .slice(0, 3)
     .map((s) => s.name)
@@ -199,31 +283,31 @@ function speakFeedback(isRight: boolean, name: string) {
 const lineMapSlice = computed(() => {
   const q = pool.value[current.value]
   if (!q) return [] as { station: Station; globalIdx: number }[]
-  const targetIdx = STATIONS.findIndex((s) => s.id === q.id)
+  const targetIdx = currentStations.value.findIndex((s) => s.id === q.id)
   const start = Math.max(0, targetIdx - 2)
-  const end = Math.min(STATIONS.length - 1, targetIdx + 2)
-  return STATIONS.slice(start, end + 1).map((station, i) => ({
+  const end = Math.min(currentStations.value.length - 1, targetIdx + 2)
+  return currentStations.value.slice(start, end + 1).map((station, i) => ({
     station,
     globalIdx: start + i,
   }))
 })
 
 const progressPct = computed(() =>
-  Math.min(100, Math.round((current.value / TOTAL_Q) * 100)),
+  Math.min(100, Math.round((current.value / questionCount.value) * 100)),
 )
 
 const showQuiz = computed(
-  () => current.value < TOTAL_Q && pool.value[current.value] != null,
+  () => current.value < questionCount.value && pool.value[current.value] != null,
 )
 
 const resultPercent = computed(() =>
-  Math.round((score.value / TOTAL_Q) * 100),
+  Math.round((score.value / questionCount.value) * 100),
 )
 
 const resultMessage = computed(() => {
   const pct = resultPercent.value
   const s = score.value
-  if (s === TOTAL_Q) return '完美！全部答對！🎉'
+  if (s === questionCount.value) return '完美！全部答對！🎉'
   if (pct >= 80) return '太棒了！非常熟練！'
   if (pct >= 60) return '不錯喔！繼續加油！'
   return '多練習幾次，加油！'
@@ -297,7 +381,7 @@ function nextQuestion() {
   stopSpeech()
   current.value++
   wrongPick.value = null
-  if (current.value >= TOTAL_Q) {
+  if (current.value >= questionCount.value) {
     window.setTimeout(() => {
       speakText(
         `遊戲結束！你答對了 ${score.value} 題，答對率 ${resultPercent.value} 百分比。${resultMessage.value}`,
@@ -335,6 +419,10 @@ function optionClassFor(idx: number, label: string) {
 
 watch(voiceEnabled, (on) => {
   if (!on) stopSpeech()
+})
+
+watch(selectedLineKey, () => {
+  initGame()
 })
 
 onMounted(() => {
@@ -456,14 +544,14 @@ watch(fireworksCanvas, (c) => {
 </script>
 
 <template>
-  <div class="quiz-root">
+  <div class="quiz-root" :style="lineThemeStyle">
     <canvas id="fireworks-canvas" ref="fireworksCanvas" aria-hidden="true" />
 
     <div class="header">
-      <div class="line-badge">BL</div>
+      <div class="line-badge">{{ currentLine.badge }}</div>
       <div>
-        <div class="header-title">板南線 站名學習</div>
-        <div class="header-sub">Bannan Line · 認識 23 個車站</div>
+        <div class="header-title">{{ currentLine.title }}</div>
+        <div class="header-sub">{{ currentLine.subtitle }}</div>
       </div>
       <div class="header-score">
         <div class="score-num">{{ score }}</div>
@@ -475,6 +563,14 @@ watch(fireworksCanvas, (c) => {
     </div>
 
     <div v-if="showQuiz" class="main">
+      <div class="line-switch-bar">
+        <span>路線：</span>
+        <select v-model="selectedLineKey" aria-label="選擇捷運路線">
+          <option v-for="line in METRO_LINES" :key="line.key" :value="line.key">
+            {{ line.title }}
+          </option>
+        </select>
+      </div>
       <div v-if="!ttsSupported" class="no-tts-notice">
         此瀏覽器不支援語音播報功能，建議使用 Chrome 或 Edge。
       </div>
@@ -505,7 +601,7 @@ watch(fireworksCanvas, (c) => {
       </div>
 
       <div class="map-section">
-        <div class="map-section-title">板南線地圖 — 找出 ？ 是哪一站</div>
+        <div class="map-section-title">{{ currentLine.title }}地圖 — 找出 ？ 是哪一站</div>
         <div ref="mapScrollEl" class="map-scroll">
           <div class="line-map">
             <div
@@ -535,7 +631,7 @@ watch(fireworksCanvas, (c) => {
                     'station-dot': true,
                     terminal:
                       (i === 0 && globalIdx === 0) ||
-                      (i === lineMapSlice.length - 1 && globalIdx === STATIONS.length - 1),
+                      (i === lineMapSlice.length - 1 && globalIdx === currentStations.length - 1),
                     target: s.id === pool[current]!.id,
                   }"
                 />
@@ -571,7 +667,7 @@ watch(fireworksCanvas, (c) => {
       <div v-else class="feedback empty" />
 
       <button v-if="answered" type="button" class="next-btn" @click="nextQuestion">
-        {{ current < TOTAL_Q - 1 ? '下一題 →' : '查看結果 →' }}
+        {{ current < questionCount - 1 ? '下一題 →' : '查看結果 →' }}
       </button>
     </div>
 
@@ -579,10 +675,10 @@ watch(fireworksCanvas, (c) => {
       <div class="result-wrap">
         <div class="result-circle">
           <div class="result-num">{{ score }}</div>
-          <div class="result-denom">/ {{ TOTAL_Q }} 題</div>
+          <div class="result-denom">/ {{ questionCount }} 題</div>
         </div>
         <div class="result-title">{{ resultMessage }}</div>
-        <div class="result-sub">答對率 {{ resultPercent }}%，共考了 {{ TOTAL_Q }} 站</div>
+        <div class="result-sub">答對率 {{ resultPercent }}%，共考了 {{ questionCount }} 站</div>
         <div class="result-review">
           <div class="review-title">本次答題紀錄</div>
           <div
@@ -1274,6 +1370,27 @@ watch(fireworksCanvas, (c) => {
   background: var(--blue-dark);
 }
 
+.line-switch-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 0.75rem;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.line-switch-bar select {
+  font-family: inherit;
+  font-size: 13px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 6px 8px;
+  background: var(--card);
+  color: var(--text);
+  cursor: pointer;
+  max-width: min(100%, 320px);
+}
+
 .voice-bar {
   display: flex;
   align-items: center;
@@ -1438,6 +1555,17 @@ watch(fireworksCanvas, (c) => {
 
   .voice-bar {
     padding: 8px 10px;
+  }
+
+  .line-switch-bar {
+    font-size: 12px;
+    margin-bottom: 0.5rem;
+  }
+
+  .line-switch-bar select {
+    font-size: 12px;
+    max-width: 100%;
+    flex: 1 1 auto;
   }
 
   .speed-wrap {
