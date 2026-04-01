@@ -3,7 +3,7 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { getPreferredZhTwVoice, getVoicesAsync } from '@/utils/speechVoice'
 
-type Station = { id: string; name: string; hint: string }
+type Station = { id: string; name: string; pronunciation?: string; hint: string }
 type MetroLine = {
   key: string
   badge: string
@@ -80,8 +80,8 @@ const CIRCULAR_STATIONS: Station[] = [
   { id: 'Y09', name: '秀朗橋', hint: '跨越新店溪，連結新店與中和兩岸' },
   { id: 'Y10', name: '景平', hint: '中和區景平路商圈，生活機能便利' },
   { id: 'Y11', name: '景安', hint: '可轉乘中和新蘆線，中和區重要轉乘站' },
-  { id: 'Y12', name: '中和', hint: '中和區行政中心附近，鄰近四號公園' },
-  { id: 'Y13', name: '橋和', hint: '中和與板橋交界，橋和路沿線住宅區' },
+  { id: 'Y12', name: '中和', pronunciation: '中河', hint: '中和區行政中心附近，鄰近四號公園' },
+  { id: 'Y13', name: '橋和', pronunciation: '橋河', hint: '中和與板橋交界，橋和路沿線住宅區' },
   { id: 'Y14', name: '中原', hint: '板橋中原路周邊，新北市住宅密集區' },
   { id: 'Y15', name: '板新', hint: '板橋新站區，新北市行政中心附近' },
   { id: 'Y16', name: '板橋', hint: '可轉乘板南線與台鐵高鐵，板橋最大交通樞紐' },
@@ -286,6 +286,11 @@ function speakText(text: string, onEnd?: () => void) {
   window.speechSynthesis.speak(attachUtterance(text, speechRate.value, onEnd))
 }
 
+function getSpokenStationName(name: string): string {
+  const station = currentStations.value.find((s) => s.name === name)
+  return station?.pronunciation?.trim() || station?.name || name
+}
+
 async function speakOptionsSequentially() {
   if (!ttsSupported || !zhVoice.value || current.value >= pool.value.length) return
   const sessionId = ++speakSessionId
@@ -304,7 +309,7 @@ async function speakOptionsSequentially() {
       return
     }
     speakingOptionIndex.value = i
-    const u = attachUtterance(opts[i]!, speechRate.value, () => {
+    const u = attachUtterance(getSpokenStationName(opts[i]!), speechRate.value, () => {
       if (sessionId !== speakSessionId) return
       speakingOptionIndex.value = null
       i++
@@ -327,12 +332,13 @@ function speakStationLabel(name: string) {
     if (labelFlashName.value === name) labelFlashName.value = null
   }, 1000)
   window.speechSynthesis.cancel()
-  window.speechSynthesis.speak(attachUtterance(name, speechRate.value))
+  window.speechSynthesis.speak(attachUtterance(getSpokenStationName(name), speechRate.value))
 }
 
 function speakFeedback(isRight: boolean, name: string) {
   if (!voiceEnabled.value || !ttsSupported) return
-  const msg = isRight ? `答對了！這站是${name}` : `答錯了，正確答案是${name}`
+  const spokenName = getSpokenStationName(name)
+  const msg = isRight ? `答對了！這站是${spokenName}` : `答錯了，正確答案是${spokenName}`
   speakText(msg)
 }
 
