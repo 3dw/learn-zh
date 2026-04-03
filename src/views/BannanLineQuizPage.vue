@@ -389,9 +389,6 @@ function prepareQuestion() {
   optionColorByIndex.value = shuffleOptionColors()
   nextTick(() => {
     scrollMapToTarget()
-    if (voiceEnabled.value && ttsSupported) {
-      void speakOptionsSequentially()
-    }
   })
 }
 
