@@ -9,6 +9,10 @@ import HelloWorld from './components/HelloWorld.vue'
       <HelloWorld msg="自主學中文" />
       <nav>
         <RouterLink to="/">首頁</RouterLink>
+        <RouterLink to="/flashcards/body">健康字卡</RouterLink>
+        <RouterLink to="/flashcards/emotion">情緒字卡</RouterLink>
+        <RouterLink to="/flashcards/env1-at-home">在家情境字卡</RouterLink>
+        <RouterLink to="/flashcards/number">數字字卡</RouterLink>
         <RouterLink to="/custom">自訂朗讀</RouterLink>
         <RouterLink to="/three-character">三字經</RouterLink>
         <RouterLink to="/what-is-this">AI 圖片學</RouterLink>

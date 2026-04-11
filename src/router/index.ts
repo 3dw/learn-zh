@@ -57,6 +57,26 @@ const router = createRouter({
       name: 'mrt-quiz',
       component: () => import('../views/MrtQuizPage.vue'),
     },
+    {
+      path: '/flashcards/body',
+      name: 'flashcards-body',
+      component: () => import('../views/BodyPage.vue'),
+    },
+    {
+      path: '/flashcards/emotion',
+      name: 'flashcards-emotion',
+      component: () => import('../views/EmotionCardsPage.vue'),
+    },
+    {
+      path: '/flashcards/env1-at-home',
+      name: 'flashcards-env1-at-home',
+      component: () => import('../views/Env1AtHomePage.vue'),
+    },
+    {
+      path: '/flashcards/number',
+      name: 'flashcards-number',
+      component: () => import('../views/NumberPage.vue'),
+    },
   ],
 })
 

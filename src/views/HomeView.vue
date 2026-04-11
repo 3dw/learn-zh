@@ -3,6 +3,12 @@ import { RouterLink } from 'vue-router'
 
 const features = [
   {
+    to: '/flashcards/body',
+    emoji: '🃏',
+    title: '中文字卡（Flashcards）',
+    desc: '用圖片搭配中文句子學習，支援台灣口音中文朗讀。可快速切換身體、情緒、在家情境與數字主題。',
+  },
+  {
     href: 'https://www.moedict.tw',
     emoji: '📚',
     title: '萌典',
