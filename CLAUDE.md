@@ -1,6 +1,6 @@
 # learn-zh
 
-自主學中文 — A Chinese learning web app built with Vue 3 + Cloudflare Workers.
+自主學華文 — A Madarin learning web app built with Vue 3 + Cloudflare Workers.
 
 ## Tech Stack
 

@@ -12,7 +12,7 @@ const exactActiveClass = 'font-medium text-zinc-900 hover:bg-transparent dark:te
 		class="fixed inset-x-0 top-0 z-[1000] border-b border-stone-200 bg-stone-50/95 backdrop-blur dark:border-zinc-800 dark:bg-zinc-950/95"
 	>
 		<div class="mx-auto max-w-7xl px-4 py-3 leading-snug">
-			<HelloWorld msg="自主學中文" />
+			<HelloWorld msg="自主學華文" />
 			<nav class="mt-3 w-full text-center">
 				<RouterLink to="/" :class="linkClass" :exact-active-class="exactActiveClass">
 					首頁

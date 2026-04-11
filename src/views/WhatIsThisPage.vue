@@ -4,7 +4,7 @@
 			class="mx-auto max-w-4xl rounded-lg bg-white p-6 shadow-sm dark:border dark:border-zinc-800 dark:bg-zinc-950"
 		>
 			<h1 class="mb-4 font-bold text-zinc-900 dark:text-zinc-50">
-				AI 圖片學英文/中文
+				AI 圖片學英文/華文
 			</h1>
 
 			<div class="mb-4 text-center">
@@ -66,7 +66,7 @@
 				<div
 					class="mt-2 rounded-lg border border-stone-200 bg-stone-50 p-4 dark:border-zinc-700 dark:bg-zinc-900"
 				>
-					<div class="mb-2 text-zinc-900 dark:text-zinc-100">中文：{{ resultZh }}</div>
+					<div class="mb-2 text-zinc-900 dark:text-zinc-100">華文：{{ resultZh }}</div>
 					<div class="mb-4 text-zinc-500 dark:text-zinc-400">英文原句：{{ resultEn }}</div>
 
 					<div class="flex flex-wrap gap-2">
@@ -75,7 +75,7 @@
 							class="cursor-pointer rounded border-0 bg-emerald-500 px-4 py-2 text-base text-white transition hover:bg-emerald-600"
 							@click="playZhAudio"
 						>
-							播放中文發音
+							播放華文發音
 						</button>
 						<button
 							type="button"

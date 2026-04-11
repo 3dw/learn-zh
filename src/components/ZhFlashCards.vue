@@ -56,11 +56,11 @@ const speakChinese = async (text: string) => {
 			<h1 class="m-0 text-3xl font-bold text-zinc-900 dark:text-zinc-100">
 				{{ title }}
 			</h1>
-			<p class="mb-4 mt-2 text-zinc-600 dark:text-zinc-400">有圖字卡｜點擊「朗讀」鈕可朗讀中文</p>
+			<p class="mb-4 mt-2 text-zinc-600 dark:text-zinc-400">有圖字卡｜點擊「朗讀」鈕可朗讀華文</p>
 			<input
 				v-model="searchQuery"
 				class="w-full max-w-sm rounded-lg border border-stone-300 bg-white px-3 py-2.5 text-base text-zinc-900 outline-none ring-emerald-500/25 focus:border-emerald-500 focus:ring-2 dark:border-zinc-600 dark:bg-zinc-950 dark:text-zinc-100"
-				placeholder="搜尋中文關鍵字"
+				placeholder="搜尋華文關鍵字"
 			/>
 		</header>
 
