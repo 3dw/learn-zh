@@ -76,8 +76,9 @@
 				<div class="flex flex-wrap items-center gap-3">
 					<button
 						type="button"
-						class="cursor-pointer rounded border-0 px-4 py-2 text-base font-medium text-white transition hover:opacity-90"
+						class="rounded border-0 px-4 py-2 text-base font-medium text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-45"
 						:class="isSpeaking ? 'bg-red-500' : 'bg-emerald-500'"
+						:disabled="voicePlaybackBlocked"
 						@click="toggleSpeech"
 					>
 						{{ isSpeaking ? '停止朗讀' : '開始朗讀' }}
@@ -91,6 +92,7 @@
 
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref } from 'vue'
+import { useSpeechAvailability } from '@/composables/useSpeechAvailability'
 import { ZH_TW_PREFERRED_KEYWORDS, getPreferredVoice, getVoicesAsync } from '@/utils/speechVoice'
 
 const rawText = ref(`人之初，性本善，性相近，習相遠。
@@ -100,6 +102,7 @@ const rawCsv = ref(`教,叫
 為人子,危人子`)
 
 const isSpeaking = ref(false)
+const { voicePlaybackAvailable, voicePlaybackBlocked } = useSpeechAvailability()
 
 const escapeRegExp = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 
@@ -175,7 +178,7 @@ const createUtterance = async () => {
 }
 
 const toggleSpeech = async () => {
-	if (typeof window === 'undefined' || !window.speechSynthesis) return
+	if (!voicePlaybackAvailable.value || typeof window === 'undefined' || !window.speechSynthesis) return
 
 	if (isSpeaking.value) {
 		window.speechSynthesis.cancel()

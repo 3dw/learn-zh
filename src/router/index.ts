@@ -58,6 +58,11 @@ const router = createRouter({
       component: () => import('../views/MrtQuizPage.vue'),
     },
     {
+      path: '/voice-install-guide',
+      name: 'voice-install-guide',
+      component: () => import('../views/VoiceInstallGuidePage.vue'),
+    },
+    {
       path: '/flashcards/body',
       name: 'flashcards-body',
       component: () => import('../views/BodyPage.vue'),

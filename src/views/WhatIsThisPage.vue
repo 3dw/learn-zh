@@ -72,14 +72,16 @@
 					<div class="flex flex-wrap gap-2">
 						<button
 							type="button"
-							class="cursor-pointer rounded border-0 bg-emerald-500 px-4 py-2 text-base text-white transition hover:bg-emerald-600"
+							class="rounded border-0 bg-emerald-500 px-4 py-2 text-base text-white transition hover:bg-emerald-600 disabled:cursor-not-allowed disabled:opacity-45"
+							:disabled="voicePlaybackBlocked"
 							@click="playZhAudio"
 						>
 							播放華文發音
 						</button>
 						<button
 							type="button"
-							class="cursor-pointer rounded border-0 bg-teal-600 px-4 py-2 text-base text-white transition hover:bg-teal-700"
+							class="rounded border-0 bg-teal-600 px-4 py-2 text-base text-white transition hover:bg-teal-700 disabled:cursor-not-allowed disabled:opacity-45"
+							:disabled="voicePlaybackBlocked"
 							@click="playEnAudio"
 						>
 							播放英文發音
@@ -102,6 +104,7 @@
 import { defineComponent, ref, onUnmounted } from 'vue'
 import heic2any from 'heic2any'
 import Pica from 'pica'
+import { useSpeechAvailability } from '@/composables/useSpeechAvailability'
 import {
 	EN_US_PREFERRED_KEYWORDS,
 	ZH_TW_PREFERRED_KEYWORDS,
@@ -112,6 +115,7 @@ export default defineComponent({
 	name: 'WhatIsThisPage',
 
 	setup() {
+		const { voicePlaybackAvailable, voicePlaybackBlocked } = useSpeechAvailability()
 		const FAVORITES_KEY = 'en_love_arr'
 		const imagePreview = ref('')
 		const loading = ref(false)
@@ -347,10 +351,12 @@ export default defineComponent({
 		}
 
 		const playZhAudio = () => {
+			if (!voicePlaybackAvailable.value) return
 			speakTextWithPreferredVoice(resultZh.value, 'zh-TW', ZH_TW_PREFERRED_KEYWORDS, 0.72)
 		}
 
 		const playEnAudio = () => {
+			if (!voicePlaybackAvailable.value) return
 			speakTextWithPreferredVoice(resultEn.value, 'en-US', EN_US_PREFERRED_KEYWORDS)
 		}
 
@@ -415,6 +421,8 @@ export default defineComponent({
 			onFileChange,
 			playZhAudio,
 			playEnAudio,
+			voicePlaybackAvailable,
+			voicePlaybackBlocked,
 			videoRef,
 			showCamera,
 			openCamera,
