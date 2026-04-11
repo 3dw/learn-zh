@@ -2,158 +2,89 @@
 import { RouterLink } from 'vue-router'
 
 const features = [
-  {
-    to: '/flashcards/body',
-    emoji: '🃏',
-    title: '中文字卡（Flashcards）',
-    desc: '用圖片搭配中文句子學習，支援台灣口音中文朗讀。可快速切換身體、情緒、在家情境與數字主題。',
-  },
-  {
-    href: 'https://www.moedict.tw',
-    emoji: '📚',
-    title: '萌典',
-    desc: '查詢中文單字、成語、詞組的釋義與用法。',
-  },
-  {
-    to: '/three-character',
-    emoji: '📖',
-    title: '三字經',
-    desc: '從千年經典出發，三字一句，朗朗上口。在節奏中感受漢字之美，奠定紮實的文化根基。',
-  },
-  {
-    to: '/custom',
-    emoji: '🎙️',
-    title: '自訂朗讀',
-    desc: '輸入任何中文文字，立即聆聽標準發音。反覆練習、聽說並進，讓口語越來越自然。',
-  },
-  {
-    to: '/what-is-this',
-    emoji: '🤖',
-    title: 'AI 圖片學',
-    desc: '拍下身邊的任何物品，AI 立刻告訴你中文怎麼說。生活即教室，隨時隨地都能學中文。',
-  },
-  {
-    to: '/bannan-line-quiz',
-    emoji: '🚇',
-    title: '站名學習',
-    desc: '搭配路線圖與語音，認識台北捷運各站中文站名。以選擇題練習，輕鬆建立生活用字庫。',
-  },
-  {
-    to: '/mrt-quiz',
-    emoji: '🚇',
-    title: '捷運站名測驗',
-    desc: '聽站名、猜路線，用台北捷運練習中文地名發音。連續答對還有獎勵！',
-  },
+	{
+		to: '/flashcards/body',
+		emoji: '🃏',
+		title: '中文字卡（Flashcards）',
+		desc: '用圖片搭配中文句子學習，支援台灣口音中文朗讀。可快速切換身體、情緒、在家情境與數字主題。',
+	},
+	{
+		href: 'https://www.moedict.tw',
+		emoji: '📚',
+		title: '萌典',
+		desc: '查詢中文單字、成語、詞組的釋義與用法。',
+	},
+	{
+		to: '/three-character',
+		emoji: '📖',
+		title: '三字經',
+		desc: '從千年經典出發，三字一句，朗朗上口。在節奏中感受漢字之美，奠定紮實的文化根基。',
+	},
+	{
+		to: '/custom',
+		emoji: '🎙️',
+		title: '自訂朗讀',
+		desc: '輸入任何中文文字，立即聆聽標準發音。反覆練習、聽說並進，讓口語越來越自然。',
+	},
+	{
+		to: '/what-is-this',
+		emoji: '🤖',
+		title: 'AI 圖片學',
+		desc: '拍下身邊的任何物品，AI 立刻告訴你中文怎麼說。生活即教室，隨時隨地都能學中文。',
+	},
+	{
+		to: '/bannan-line-quiz',
+		emoji: '🚇',
+		title: '站名學習',
+		desc: '搭配路線圖與語音，認識台北捷運各站中文站名。以選擇題練習，輕鬆建立生活用字庫。',
+	},
+	{
+		to: '/mrt-quiz',
+		emoji: '🚇',
+		title: '捷運站名測驗',
+		desc: '聽站名、猜路線，用台北捷運練習中文地名發音。連續答對還有獎勵！',
+	},
 ]
+
+const cardClass =
+	'flex flex-col gap-2.5 rounded-xl border border-stone-200 bg-white/90 p-7 text-left text-zinc-700 no-underline shadow-sm transition hover:-translate-y-0.5 hover:border-emerald-500/80 hover:shadow-md dark:border-zinc-700 dark:bg-zinc-900/80 dark:text-zinc-200 dark:hover:border-emerald-400/70'
 </script>
 
 <template>
-  <main class="home">
-    <section class="hero">
-      <div class="hero-emoji">🇹🇼</div>
-      <h1>自主學中文</h1>
-      <p class="tagline">用最直覺的方式，讓中文學習融入每一天</p>
-    </section>
+	<main class="mx-auto max-w-3xl px-6 pb-16 pt-8">
+		<section class="px-2 py-10 text-center sm:py-12">
+			<div class="mb-2 text-5xl">🇹🇼</div>
+			<h1 class="mb-3 text-4xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100">
+				自主學中文
+			</h1>
+			<p class="text-lg text-zinc-600 opacity-90 dark:text-zinc-300">
+				用最直覺的方式，讓中文學習融入每一天
+			</p>
+		</section>
 
-    <section class="features">
-      <div v-for="f in features" :key="f.to || f.href">
-        <RouterLink v-if="f.to" :to="f.to" class="feature-card">
-          <span class="feature-emoji">{{ f.emoji }}</span>
-          <h2>{{ f.title }}</h2>
-          <p>{{ f.desc }}</p>
-          <span class="cta">開始 →</span>
-        </RouterLink>
-        <a v-else :href="f.href" class="feature-card" target="_blank" rel="noopener">
-          <span class="feature-emoji">{{ f.emoji }}</span>
-          <h2>{{ f.title }}</h2>
-          <p>{{ f.desc }}</p>
-          <span class="cta">前往 →</span>
-        </a>
-      </div>
-    </section>
-  </main>
+		<section class="mt-8 grid gap-6 sm:grid-cols-2">
+			<div v-for="f in features" :key="f.to || f.href">
+				<RouterLink v-if="f.to" :to="f.to" :class="cardClass">
+					<span class="text-3xl">{{ f.emoji }}</span>
+					<h2 class="text-xl font-semibold text-zinc-900 dark:text-zinc-100">
+						{{ f.title }}
+					</h2>
+					<p class="flex-1 text-[0.95rem] leading-relaxed">{{ f.desc }}</p>
+					<span class="mt-1 text-sm font-semibold text-emerald-600 dark:text-emerald-400">
+						開始 →
+					</span>
+				</RouterLink>
+				<a v-else :href="f.href" :class="cardClass" target="_blank" rel="noopener">
+					<span class="text-3xl">{{ f.emoji }}</span>
+					<h2 class="text-xl font-semibold text-zinc-900 dark:text-zinc-100">
+						{{ f.title }}
+					</h2>
+					<p class="flex-1 text-[0.95rem] leading-relaxed">{{ f.desc }}</p>
+					<span class="mt-1 text-sm font-semibold text-emerald-600 dark:text-emerald-400">
+						前往 →
+					</span>
+				</a>
+			</div>
+		</section>
+	</main>
 </template>
-
-<style scoped>
-.home {
-  max-width: 860px;
-  margin: 0 auto;
-  padding: 2rem 1.5rem 4rem;
-}
-
-/* Hero */
-.hero {
-  text-align: center;
-  padding: 3rem 0 2.5rem;
-}
-
-.hero-emoji {
-  font-size: 3.5rem;
-  margin-bottom: 0.5rem;
-}
-
-h1 {
-  font-size: 2.6rem;
-  font-weight: 700;
-  color: var(--color-heading);
-  margin: 0 0 0.75rem;
-}
-
-.tagline {
-  font-size: 1.15rem;
-  color: var(--color-text);
-  opacity: 0.75;
-}
-
-/* Feature cards */
-.features {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 1.5rem;
-  margin-top: 2rem;
-}
-
-.feature-card {
-  display: flex;
-  flex-direction: column;
-  gap: 0.6rem;
-  padding: 1.75rem 1.5rem;
-  border: 1px solid var(--color-border);
-  border-radius: 12px;
-  text-decoration: none;
-  color: var(--color-text);
-  background: var(--color-background-soft);
-  transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s;
-}
-
-.feature-card:hover {
-  border-color: hsla(160, 100%, 37%, 0.8);
-  transform: translateY(-3px);
-  box-shadow: 0 6px 20px hsla(160, 100%, 37%, 0.15);
-}
-
-.feature-emoji {
-  font-size: 2rem;
-}
-
-.feature-card h2 {
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: var(--color-heading);
-  margin: 0;
-}
-
-.feature-card p {
-  font-size: 0.95rem;
-  line-height: 1.65;
-  margin: 0;
-  flex: 1;
-}
-
-.cta {
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: hsla(160, 100%, 37%, 1);
-  margin-top: 0.5rem;
-}
-</style>

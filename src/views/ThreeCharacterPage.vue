@@ -1,13 +1,23 @@
 <template>
-  <div class="three-character-page">
-    <div class="sanzijing-container">
-      <h1 class="title">三字經節選</h1>
-      <div class="content">{{ text }}</div>
-      <button type="button" class="speak-btn" @click="toggleSpeech">
-        {{ isSpeaking ? '暫停' : '朗讀' }}
-      </button>
-    </div>
-  </div>
+	<div class="min-h-dvh bg-gradient-to-br from-stone-100 via-amber-50/40 to-stone-200 px-4 py-6 dark:from-zinc-900 dark:via-zinc-900 dark:to-zinc-950">
+		<div
+			class="mx-auto max-w-2xl rounded-2xl border border-stone-200/80 bg-white/85 px-6 py-6 text-center shadow-sm backdrop-blur-sm dark:border-zinc-700 dark:bg-zinc-900/85"
+		>
+			<h1 class="mb-3.5 text-3xl font-bold text-amber-950 dark:text-amber-100">
+				三字經節選
+			</h1>
+			<div class="mb-6 whitespace-pre-wrap text-left text-xl leading-relaxed text-zinc-800 dark:text-zinc-100">
+				{{ text }}
+			</div>
+			<button
+				type="button"
+				class="min-w-[120px] cursor-pointer rounded border-0 bg-emerald-500 px-4 py-2 text-base font-medium text-white transition hover:bg-emerald-600"
+				@click="toggleSpeech"
+			>
+				{{ isSpeaking ? '暫停' : '朗讀' }}
+			</button>
+		</div>
+	</div>
 </template>
 
 <script setup lang="ts">
@@ -25,9 +35,9 @@ const text = `人之初，性本善，性相近，習相遠。
 首孝悌，次見聞。`
 
 const homophoneMap: Record<string, string> = {
-  教: '叫',
-  為人子: '危人子',
-  鄰處: '鄰杵',
+	教: '叫',
+	為人子: '危人子',
+	鄰處: '鄰杵',
 }
 
 const isSpeaking = ref(false)
@@ -35,98 +45,54 @@ const isSpeaking = ref(false)
 const escapeRegExp = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 
 const speechText = computed(() => {
-  let processedText = text
+	let processedText = text
 
-  Object.entries(homophoneMap).forEach(([original, replacement]) => {
-    processedText = processedText.replace(new RegExp(escapeRegExp(original), 'g'), replacement)
-  })
+	Object.entries(homophoneMap).forEach(([original, replacement]) => {
+		processedText = processedText.replace(new RegExp(escapeRegExp(original), 'g'), replacement)
+	})
 
-  return processedText
+	return processedText
 })
 
 const createUtterance = async () => {
-  const voices = await getVoicesAsync()
-  const utterance = new SpeechSynthesisUtterance(speechText.value)
-  utterance.lang = 'zh-TW'
-  utterance.rate = 0.9
+	const voices = await getVoicesAsync()
+	const utterance = new SpeechSynthesisUtterance(speechText.value)
+	utterance.lang = 'zh-TW'
+	utterance.rate = 0.9
 
-  const preferredVoice = getPreferredVoice('zh-TW', ZH_TW_PREFERRED_KEYWORDS, voices)
-  if (preferredVoice) {
-    utterance.voice = preferredVoice
-    utterance.lang = preferredVoice.lang
-  }
+	const preferredVoice = getPreferredVoice('zh-TW', ZH_TW_PREFERRED_KEYWORDS, voices)
+	if (preferredVoice) {
+		utterance.voice = preferredVoice
+		utterance.lang = preferredVoice.lang
+	}
 
-  utterance.onend = () => {
-    isSpeaking.value = false
-  }
+	utterance.onend = () => {
+		isSpeaking.value = false
+	}
 
-  utterance.onerror = () => {
-    isSpeaking.value = false
-  }
+	utterance.onerror = () => {
+		isSpeaking.value = false
+	}
 
-  return utterance
+	return utterance
 }
 
 const toggleSpeech = async () => {
-  if (typeof window === 'undefined' || !window.speechSynthesis) return
+	if (typeof window === 'undefined' || !window.speechSynthesis) return
 
-  if (isSpeaking.value) {
-    window.speechSynthesis.cancel()
-    isSpeaking.value = false
-    return
-  }
+	if (isSpeaking.value) {
+		window.speechSynthesis.cancel()
+		isSpeaking.value = false
+		return
+	}
 
-  window.speechSynthesis.cancel()
-  window.speechSynthesis.speak(await createUtterance())
-  isSpeaking.value = true
+	window.speechSynthesis.cancel()
+	window.speechSynthesis.speak(await createUtterance())
+	isSpeaking.value = true
 }
 
 onBeforeUnmount(() => {
-  if (typeof window === 'undefined' || !window.speechSynthesis) return
-  window.speechSynthesis.cancel()
+	if (typeof window === 'undefined' || !window.speechSynthesis) return
+	window.speechSynthesis.cancel()
 })
 </script>
-
-<style scoped>
-.three-character-page {
-  padding: 1rem;
-  background: linear-gradient(135deg, #f8f4ef 0%, #eee5da 100%);
-}
-
-.sanzijing-container {
-  max-width: 680px;
-  margin: 0 auto;
-  text-align: center;
-  font-family: 'Arial', sans-serif;
-  background: #ffffffcc;
-  border-radius: 14px;
-  padding: 24px;
-}
-
-.title {
-  font-size: 30px;
-  font-weight: 700;
-  margin-bottom: 14px;
-  color: #4a3e2d;
-}
-
-.content {
-  white-space: pre-wrap;
-  font-size: 20px;
-  line-height: 1.8;
-  text-align: left;
-  margin-bottom: 24px;
-  color: #2f2f2f;
-}
-
-.speak-btn {
-  min-width: 120px;
-  padding: 0.5rem 1rem;
-  background: #42b983;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  font-size: 1rem;
-  cursor: pointer;
-}
-</style>

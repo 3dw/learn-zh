@@ -1,23 +1,39 @@
-@import './base.css';
+@import 'tailwindcss';
 
+@layer base {
+	*,
+	*::before,
+	*::after {
+		box-sizing: border-box;
+	}
+
+	html {
+		text-rendering: optimizeLegibility;
+		-webkit-font-smoothing: antialiased;
+		-moz-osx-font-smoothing: grayscale;
+	}
+
+	body {
+		@apply min-h-dvh bg-stone-50 text-[15px] leading-relaxed text-zinc-800 transition-colors duration-500;
+		font-family:
+			'Noto Sans TC',
+			'PingFang TC',
+			'Microsoft JhengHei',
+			ui-sans-serif,
+			system-ui,
+			sans-serif;
+	}
+
+	@media (prefers-color-scheme: dark) {
+		body {
+			@apply bg-zinc-950 text-zinc-200;
+		}
+	}
+}
+
+/* 為固定頂欄預留空間（與 App 頂欄高度對齊） */
 #app {
-  --app-header-height: 116px;
-  width: 100%;
-  margin: 0;
-  padding: calc(var(--app-header-height) + 1rem) 0 0;
-  font-weight: normal;
-}
-
-a,
-.green {
-  text-decoration: none;
-  color: hsla(160, 100%, 37%, 1);
-  transition: 0.4s;
-  padding: 3px;
-}
-
-@media (hover: hover) {
-  a:hover {
-    background-color: hsla(160, 100%, 37%, 0.2);
-  }
+	--app-header-height: 7.25rem;
+	@apply w-full font-normal;
+	padding: calc(var(--app-header-height) + 1rem) 0 0;
 }

@@ -134,7 +134,14 @@ const METRO_LINES: MetroLine[] = [
 ]
 
 const TOTAL_Q = 15
-const OPT_COLOR_CLASSES = ['opt-c0', 'opt-c1', 'opt-c2', 'opt-c3'] as const
+
+const OPT_PALETTES = [
+	'bg-amber-100 border-amber-300 text-amber-950 hover:not(:disabled):bg-amber-200 hover:not(:disabled):border-amber-400',
+	'bg-emerald-100 border-emerald-400 text-emerald-950 hover:not(:disabled):bg-emerald-200 hover:not(:disabled):border-emerald-500',
+	'bg-sky-100 border-sky-400 text-sky-950 hover:not(:disabled):bg-sky-200 hover:not(:disabled):border-sky-500',
+	'bg-rose-100 border-rose-300 text-rose-950 hover:not(:disabled):bg-rose-200 hover:not(:disabled):border-rose-400',
+] as const
+
 const selectedLineKey = ref<string>('bannan')
 const route = useRoute()
 const router = useRouter()
@@ -196,8 +203,8 @@ function getOptions(target: Station): string[] {
   return shuffle([target.name, ...shuffled])
 }
 
-function shuffleOptionColors(): string[] {
-  return shuffle([...OPT_COLOR_CLASSES])
+function shuffleOptionPaletteIndices(): number[] {
+	return shuffle([0, 1, 2, 3])
 }
 
 const ttsSupported = typeof window !== 'undefined' && 'speechSynthesis' in window
@@ -215,7 +222,7 @@ const answered = ref(false)
 const history = ref<{ station: string; correct: boolean }[]>([])
 const firstQ = pool.value[0]
 const currentOptions = ref<string[]>(firstQ ? getOptions(firstQ) : [])
-const optionColorByIndex = ref<string[]>(shuffleOptionColors())
+const optionPaletteByIndex = ref<number[]>(shuffleOptionPaletteIndices())
 
 const feedbackKind = ref<'empty' | 'correct' | 'wrong'>('empty')
 const feedbackText = ref('')
@@ -392,7 +399,7 @@ function prepareQuestion() {
   const q = pool.value[current.value]
   if (!q) return
   currentOptions.value = getOptions(q)
-  optionColorByIndex.value = shuffleOptionColors()
+  optionPaletteByIndex.value = shuffleOptionPaletteIndices()
   nextTick(() => {
     scrollMapToTarget()
     if (voiceEnabled.value && ttsSupported) {
@@ -459,24 +466,36 @@ function isOptionDisabled() {
 }
 
 function optionClassFor(idx: number, label: string) {
-  const base = optionColorByIndex.value[idx] ?? 'opt-c0'
-  const out: (string | Record<string, boolean>)[] = ['option-btn', base]
-  if (!answered.value) {
-    if (speakingOptionIndex.value === idx) out.push('speaking-highlight')
-    return out
-  }
-  const q = pool.value[current.value]
-  if (!q) return out
-  const correctName = q.name
-  const wasRight = history.value[current.value]?.correct
-  if (label === correctName) {
-    if (!wasRight) out.push('reveal')
-    else out.push('correct')
-  }
-  if (wasRight === false && label !== correctName && label === wrongPick.value) {
-    out.push('wrong')
-  }
-  return out
+	const base: (string | Record<string, boolean>)[] = [
+		'rounded-2xl border-[1.5px] px-3 py-5 text-center font-sans text-[22px] font-bold leading-snug transition min-h-[56px] min-[401px]:min-h-[76px]',
+	]
+	if (!answered.value) {
+		const pi = optionPaletteByIndex.value[idx] ?? 0
+		base.push(OPT_PALETTES[pi % OPT_PALETTES.length]!)
+		if (speakingOptionIndex.value === idx) base.push('quiz-opt-speaking')
+		base.push(
+			'hover:not(:disabled):-translate-y-px hover:not(:disabled):border-[var(--blue)] hover:not(:disabled):bg-[var(--blue-light)] hover:not(:disabled):text-[var(--blue-dark)]',
+		)
+		return base
+	}
+	const q = pool.value[current.value]
+	if (!q) return base
+	const correctName = q.name
+	const wasRight = history.value[current.value]?.correct
+	if (label === correctName) {
+		if (!wasRight) {
+			base.push('border-emerald-600 bg-emerald-100 text-emerald-800 opacity-55')
+		} else {
+			base.push('border-emerald-600 bg-emerald-50 text-emerald-800')
+		}
+	} else if (wasRight === false && label === wrongPick.value) {
+		base.push('border-red-600 bg-red-50 text-red-800')
+	} else {
+		base.push(
+			'cursor-default border-slate-200 bg-slate-100 text-zinc-500 opacity-45 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-400',
+		)
+	}
+	return base
 }
 
 watch(voiceEnabled, (on) => {
@@ -625,1068 +644,444 @@ watch(fireworksCanvas, (c) => {
 </script>
 
 <template>
-  <div class="quiz-root" :style="lineThemeStyle">
-    <canvas id="fireworks-canvas" ref="fireworksCanvas" aria-hidden="true" />
+	<div
+		class="box-border flex min-h-dvh w-full max-w-full flex-col overflow-x-hidden bg-slate-100 font-sans text-zinc-900 antialiased [padding-left:env(safe-area-inset-left,0)] [padding-right:env(safe-area-inset-right,0)] dark:bg-zinc-950 dark:text-zinc-100"
+		:style="lineThemeStyle"
+	>
+		<canvas
+			id="fireworks-canvas"
+			ref="fireworksCanvas"
+			aria-hidden="true"
+			class="pointer-events-none fixed inset-0 z-[9999] h-full w-full"
+		/>
 
-    <div class="header">
-      <div class="line-badge">{{ currentLine.badge }}</div>
-      <div>
-        <div class="header-title">{{ currentLine.title }}</div>
-        <div class="header-sub">{{ currentLine.subtitle }}</div>
-      </div>
-      <div class="header-score">
-        <div class="score-num">{{ score }}</div>
-        <div class="score-label">答對題數</div>
-      </div>
-    </div>
-    <div class="progress-bar-wrap">
-      <div class="progress-bar-fill" :style="{ width: progressPct + '%' }" />
-    </div>
+		<div
+			class="flex flex-wrap items-center gap-3.5 bg-[var(--blue)] px-4 py-3 text-white shadow-[0_2px_12px_rgba(0,112,189,0.25)] sm:gap-3.5 sm:px-6 sm:py-3.5"
+		>
+			<div
+				class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-lg font-bold text-[var(--blue)] sm:h-10 sm:w-10 sm:text-[22px]"
+				style="font-family: 'Barlow Condensed', ui-sans-serif, system-ui, sans-serif"
+			>
+				{{ currentLine.badge }}
+			</div>
+			<div class="min-w-0 flex-1 basis-[140px]">
+				<div class="text-base font-bold leading-snug sm:text-lg">{{ currentLine.title }}</div>
+				<div class="mt-0.5 text-[11px] opacity-85 leading-snug sm:text-[13px]">
+					{{ currentLine.subtitle }}
+				</div>
+			</div>
+			<div class="ml-auto shrink-0 text-right">
+				<div
+					class="text-2xl font-bold leading-none sm:text-[28px]"
+					style="font-family: 'Barlow Condensed', ui-sans-serif, system-ui, sans-serif"
+				>
+					{{ score }}
+				</div>
+				<div class="text-[11px] opacity-75">答對題數</div>
+			</div>
+		</div>
+		<div class="h-1.5 bg-[var(--blue-dark)]">
+			<div
+				class="h-1.5 bg-white transition-[width] duration-300 ease-out"
+				:style="{ width: progressPct + '%' }"
+			/>
+		</div>
 
-    <div v-if="showQuiz" class="main">
-      <div class="line-switch-bar">
-        <span>路線：</span>
-        <select v-model="selectedLineKey" aria-label="選擇捷運路線">
-          <option v-for="line in METRO_LINES" :key="line.key" :value="line.key">
-            {{ line.title }}
-          </option>
-        </select>
-      </div>
-      <div v-if="!ttsSupported" class="no-tts-notice">
-        此瀏覽器不支援語音播報功能，建議使用 Chrome 或 Edge。
-      </div>
-      <div v-else class="voice-bar">
-        <label class="voice-toggle" :class="{ on: voiceEnabled }">
-          <input v-model="voiceEnabled" type="checkbox" />
-          語音播報
-        </label>
-        <div class="voice-sep" />
-        <button
-          type="button"
-          class="speak-btn"
-          :class="{ speaking: replayBusy }"
-          :disabled="replayBusy || !voiceEnabled"
-          @click="speakOptionsSequentially"
-        >
-          <span class="voice-icon">🔈</span>
-          再聽一次
-        </button>
-        <div class="speed-wrap">
-          速度：
-          <select v-model.number="speechRate">
-            <option :value="0.6">慢速</option>
-            <option :value="0.85">正常</option>
-            <option :value="1.1">快速</option>
-          </select>
-        </div>
-      </div>
+		<div v-if="showQuiz" class="mx-auto box-border w-full min-w-0 max-w-[720px] px-3 pb-8 pt-5 sm:px-4">
+			<div class="mb-3 flex flex-wrap items-center gap-2 text-xs text-slate-500 sm:text-[13px] dark:text-zinc-400">
+				<span>路線：</span>
+				<select
+					v-model="selectedLineKey"
+					aria-label="選擇捷運路線"
+					class="max-w-full cursor-pointer rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs text-zinc-900 sm:max-w-xs sm:text-[13px] dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-100"
+				>
+					<option v-for="line in METRO_LINES" :key="line.key" :value="line.key">
+						{{ line.title }}
+					</option>
+				</select>
+			</div>
+			<div
+				v-if="!ttsSupported"
+				class="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-slate-600 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-100"
+			>
+				此瀏覽器不支援語音播報功能，建議使用 Chrome 或 Edge。
+			</div>
+			<div
+				v-else
+				class="mb-4 flex max-w-full flex-wrap items-center gap-2.5 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-xs sm:gap-2.5 sm:px-3.5 sm:text-[13px] dark:border-zinc-600 dark:bg-zinc-900"
+			>
+				<label
+					class="flex cursor-pointer select-none items-center gap-1.5 text-slate-500 dark:text-zinc-400"
+					:class="voiceEnabled ? 'font-medium text-[var(--blue-dark)] dark:text-sky-200' : ''"
+				>
+					<input
+						v-model="voiceEnabled"
+						type="checkbox"
+						class="h-[15px] w-[15px] cursor-pointer accent-[var(--blue)]"
+					/>
+					語音播報
+				</label>
+				<div class="hidden h-5 w-px shrink-0 bg-slate-200 sm:block dark:bg-zinc-600" />
+				<button
+					type="button"
+					class="flex items-center gap-1 rounded-lg border border-[var(--blue-mid)] bg-[var(--blue-light)] px-3 py-1 text-[13px] font-medium text-[var(--blue-dark)] transition hover:bg-[var(--blue-mid)] disabled:cursor-default disabled:opacity-40 dark:text-sky-950"
+					:class="replayBusy ? 'border-[var(--blue-dark)] bg-[var(--blue)] text-white' : ''"
+					:disabled="replayBusy || !voiceEnabled"
+					@click="speakOptionsSequentially"
+				>
+					<span class="text-[15px] leading-none">🔈</span>
+					再聽一次
+				</button>
+				<div class="flex w-full items-center gap-1.5 text-[12px] text-slate-500 sm:ml-auto sm:w-auto dark:text-zinc-400">
+					速度：
+					<select
+						v-model.number="speechRate"
+						class="cursor-pointer rounded-md border border-slate-200 bg-white px-1.5 py-0.5 text-[12px] text-zinc-900 dark:border-zinc-600 dark:bg-zinc-950 dark:text-zinc-100"
+					>
+						<option :value="0.6">慢速</option>
+						<option :value="0.85">正常</option>
+						<option :value="1.1">快速</option>
+					</select>
+				</div>
+			</div>
 
-      <div class="map-section">
-        <div class="map-section-title">{{ currentLine.title }}地圖 — 找出 ？ 是哪一站</div>
-        <div ref="mapScrollEl" class="map-scroll">
-          <div class="line-map">
-            <div
-              v-for="({ station: s, globalIdx }, i) in lineMapSlice"
-              :key="s.id"
-              class="station-wrap"
-            >
-              <div
-                v-if="s.id === pool[current]!.id"
-                class="station-label hidden-label"
-              >
-                <span>？</span>
-              </div>
-              <button
-                v-else
-                type="button"
-                class="station-label clickable"
-                :title="'點我聽讀：' + s.name"
-                :class="{ 'label-speaking': labelFlashName === s.name }"
-                @click="speakStationLabel(s.name)"
-              >
-                {{ s.name }}
-              </button>
-              <div class="dot-row">
-                <div
-                  :class="{
-                    'station-dot': true,
-                    terminal:
-                      (i === 0 && globalIdx === 0) ||
-                      (i === lineMapSlice.length - 1 && globalIdx === currentStations.length - 1),
-                    target: s.id === pool[current]!.id,
-                  }"
-                />
-              </div>
-              <div class="station-num">{{ s.id }}</div>
-            </div>
-          </div>
-        </div>
-      </div>
+			<div
+				class="mb-4 max-w-full overflow-hidden rounded-2xl border border-slate-200 bg-white px-3 pb-4 pt-5 sm:px-3 dark:border-zinc-600 dark:bg-zinc-900"
+			>
+				<div
+					class="mb-4 text-[11px] font-medium uppercase tracking-wide text-slate-500 sm:text-xs dark:text-zinc-400"
+				>
+					{{ currentLine.title }}地圖 — 找出 ？ 是哪一站
+				</div>
+				<div
+					ref="mapScrollEl"
+					class="max-w-full overflow-x-auto overflow-y-hidden pb-2 [-webkit-overflow-scrolling:touch] [overscroll-behavior-x:contain]"
+				>
+					<div
+						class="line-map flex w-max min-w-max items-stretch gap-x-[44px] px-3 max-[640px]:gap-x-[30px] max-[400px]:gap-x-6"
+					>
+						<div
+							v-for="({ station: s, globalIdx }, i) in lineMapSlice"
+							:key="s.id"
+							class="station-wrap flex shrink-0 flex-col items-center"
+						>
+							<div v-if="s.id === pool[current]!.id" class="station-label hidden-label">
+								<span>？</span>
+							</div>
+							<button
+								v-else
+								type="button"
+								class="station-label clickable"
+								:title="'點我聽讀：' + s.name"
+								:class="{ 'label-speaking': labelFlashName === s.name }"
+								@click="speakStationLabel(s.name)"
+							>
+								{{ s.name }}
+							</button>
+							<div class="dot-row">
+								<div
+									:class="{
+										'station-dot': true,
+										terminal:
+											(i === 0 && globalIdx === 0) ||
+											(i === lineMapSlice.length - 1 &&
+												globalIdx === currentStations.length - 1),
+										target: s.id === pool[current]!.id,
+									}"
+								/>
+							</div>
+							<div
+								class="station-num mt-1.5 whitespace-nowrap text-[10px] font-semibold text-[var(--blue)] dark:text-sky-300"
+								style="font-family: 'Barlow Condensed', ui-sans-serif, system-ui, sans-serif"
+							>
+								{{ s.id }}
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
 
-      <div class="question-card">
-        <div class="question-text">這個站叫什麼名字？</div>
-        <div class="question-hint">提示：{{ pool[current]!.hint }}</div>
-      </div>
+			<div
+				class="mb-4 rounded-xl border border-[var(--blue-mid)] bg-[var(--blue-light)] px-4 py-4 dark:border-sky-800 dark:bg-sky-950/30"
+			>
+				<div class="text-lg font-bold leading-normal text-[var(--blue-dark)] sm:text-[22px] dark:text-sky-100">
+					這個站叫什麼名字？
+				</div>
+				<div
+					class="mt-2 break-words text-sm leading-relaxed text-[var(--blue-dark)] opacity-80 sm:text-base dark:text-sky-100/90"
+				>
+					提示：{{ pool[current]!.hint }}
+				</div>
+			</div>
 
-      <div class="options-grid">
-        <button
-          v-for="(label, idx) in currentOptions"
-          :key="idx + label"
-          type="button"
-          :class="optionClassFor(idx, label)"
-          :disabled="isOptionDisabled()"
-          @click="onChoose(label)"
-        >
-          {{ label }}
-        </button>
-      </div>
+			<div class="mb-4 grid grid-cols-1 gap-2 min-[401px]:grid-cols-2 min-[401px]:gap-2.5">
+				<button
+					v-for="(label, idx) in currentOptions"
+					:key="idx + label"
+					type="button"
+					:class="optionClassFor(idx, label)"
+					:disabled="isOptionDisabled()"
+					@click="onChoose(label)"
+				>
+					{{ label }}
+				</button>
+			</div>
 
-      <div v-if="feedbackKind !== 'empty'" class="feedback" :class="feedbackKind">
-        <span class="feedback-icon">{{ feedbackKind === 'correct' ? '✓' : '✗' }}</span>
-        {{ feedbackText }}
-      </div>
-      <div v-else class="feedback empty" />
+			<div
+				v-if="feedbackKind === 'correct'"
+				class="mb-4 flex min-h-11 flex-wrap items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-100"
+			>
+				<span class="shrink-0 text-xl">✓</span>
+				{{ feedbackText }}
+			</div>
+			<div
+				v-else-if="feedbackKind === 'wrong'"
+				class="mb-4 flex min-h-11 flex-wrap items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-800 dark:border-red-900 dark:bg-red-950/40 dark:text-red-100"
+			>
+				<span class="shrink-0 text-xl">✗</span>
+				{{ feedbackText }}
+			</div>
 
-      <button v-if="answered" type="button" class="next-btn" @click="nextQuestion">
-        {{ current < questionCount - 1 ? '下一題 →' : '查看結果 →' }}
-      </button>
-    </div>
+			<button
+				v-if="answered"
+				type="button"
+				class="w-full cursor-pointer rounded-xl border-0 bg-[var(--blue)] py-3.5 text-[15px] font-bold tracking-wide text-white transition hover:bg-[var(--blue-dark)] active:scale-[0.98] dark:text-white"
+				@click="nextQuestion"
+			>
+				{{ current < questionCount - 1 ? '下一題 →' : '查看結果 →' }}
+			</button>
+		</div>
 
-    <div v-else class="main">
-      <div class="result-wrap">
-        <div class="result-circle">
-          <div class="result-num">{{ score }}</div>
-          <div class="result-denom">/ {{ questionCount }} 題</div>
-        </div>
-        <div class="result-title">{{ resultMessage }}</div>
-        <div class="result-sub">答對率 {{ resultPercent }}%，共考了 {{ questionCount }} 站</div>
-        <div class="result-review">
-          <div class="review-title">本次答題紀錄</div>
-          <div
-            v-for="(h, i) in history"
-            :key="i"
-            class="review-item"
-          >
-            <div class="review-dot" :class="h.correct ? 'ok' : 'ng'" />
-            <span class="review-id">{{ pool[i]!.id }}</span>
-            <span class="review-name">{{ h.station }}</span>
-            <span
-              class="review-flag"
-              :class="h.correct ? 'ok-text' : 'ng-text'"
-            >
-              {{ h.correct ? '✓ 答對' : '✗ 答錯' }}
-            </span>
-          </div>
-        </div>
-        <button type="button" class="restart-btn" @click="initGame">
-          再挑戰一次
-        </button>
-      </div>
-    </div>
-  </div>
+		<div v-else class="mx-auto box-border w-full min-w-0 max-w-[720px] px-3 pb-8 pt-5 sm:px-4">
+			<div class="px-2 pb-4 pt-8 text-center">
+				<div
+					class="mx-auto mb-5 flex h-[120px] w-[120px] flex-col items-center justify-center rounded-full bg-[var(--blue)] text-white shadow-[0_4px_24px_rgba(0,112,189,0.3)] dark:shadow-lg"
+				>
+					<div
+						class="text-[40px] font-bold leading-none"
+						style="font-family: 'Barlow Condensed', ui-sans-serif, system-ui, sans-serif"
+					>
+						{{ score }}
+					</div>
+					<div class="text-[13px] opacity-80">/ {{ questionCount }} 題</div>
+				</div>
+				<div class="mb-2 text-lg font-bold sm:text-[22px]">{{ resultMessage }}</div>
+				<div class="mb-7 text-sm text-slate-500 dark:text-zinc-400">
+					答對率 {{ resultPercent }}%，共考了 {{ questionCount }} 站
+				</div>
+				<div
+					class="mb-6 rounded-xl border border-slate-200 bg-white p-4 text-left dark:border-zinc-600 dark:bg-zinc-900"
+				>
+					<div class="mb-2.5 text-[13px] text-slate-500 dark:text-zinc-400">本次答題紀錄</div>
+					<div
+						v-for="(h, i) in history"
+						:key="i"
+						class="flex flex-wrap items-center gap-2 border-t border-slate-200 py-1.5 text-[13px] first:border-t-0 dark:border-zinc-700"
+					>
+						<div
+							class="h-2 w-2 shrink-0 rounded-full"
+							:class="h.correct ? 'bg-emerald-600' : 'bg-red-600'"
+						/>
+						<span class="min-w-9 text-xs text-slate-500 dark:text-zinc-400">{{ pool[i]!.id }}</span>
+						<span
+							class="min-w-0 flex-1 basis-[120px] font-medium [overflow-wrap:anywhere] dark:text-zinc-100"
+						>
+							{{ h.station }}
+						</span>
+						<span
+							class="ml-auto text-xs"
+							:class="h.correct ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'"
+						>
+							{{ h.correct ? '✓ 答對' : '✗ 答錯' }}
+						</span>
+					</div>
+				</div>
+				<button
+					type="button"
+					class="cursor-pointer rounded-xl border-0 bg-[var(--blue)] px-10 py-3.5 text-[15px] font-bold text-white transition hover:bg-[var(--blue-dark)]"
+					@click="initGame"
+				>
+					再挑戰一次
+				</button>
+			</div>
+		</div>
+	</div>
 </template>
 
 <style scoped>
-@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Barlow+Condensed:wght@600;700&display=swap');
-
-.quiz-root {
-  --blue: #0070bd;
-  --blue-dark: #004f8a;
-  --blue-light: #e6f3fb;
-  --blue-mid: #b5d4f4;
-  --correct: #1a7c4f;
-  --correct-bg: #e6f4ee;
-  --wrong: #b22222;
-  --wrong-bg: #fdecea;
-  --text: #1a1a2e;
-  --text-muted: #5a6070;
-  --bg: #f4f7fb;
-  --card: #ffffff;
-  --border: #d8e4f0;
-  --station-size: 12px;
-  --line-w: 6px;
-  --station-gap: 44px;
-  --main-pad-x: 1rem;
-
-  box-sizing: border-box;
-  width: 100%;
-  max-width: 100%;
-  overflow-x: hidden;
-  padding-left: env(safe-area-inset-left, 0);
-  padding-right: env(safe-area-inset-right, 0);
-  font-family: 'Noto Sans TC', 'PingFang TC', 'Microsoft JhengHei', sans-serif;
-  background: var(--bg);
-  min-height: 100vh;
-  min-height: 100dvh;
-  color: var(--text);
-  margin: 0;
-}
-
-#fireworks-canvas {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-  z-index: 9999;
-}
-
-.header {
-  background: var(--blue);
-  color: white;
-  padding: 1rem 1.5rem 0.9rem;
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  flex-wrap: wrap;
-  box-shadow: 0 2px 12px rgba(0, 112, 189, 0.25);
-}
-
-.header > div:nth-child(2) {
-  min-width: 0;
-  flex: 1 1 140px;
-}
-
-.line-badge {
-  background: white;
-  color: var(--blue);
-  font-family: 'Barlow Condensed', sans-serif;
-  font-weight: 700;
-  font-size: 22px;
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.header-title {
-  font-size: 18px;
-  font-weight: 700;
-}
-
-.header-sub {
-  font-size: 13px;
-  opacity: 0.85;
-  margin-top: 2px;
-}
-
-.header-score {
-  margin-left: auto;
-  text-align: right;
-  flex-shrink: 0;
-}
-
-.score-num {
-  font-family: 'Barlow Condensed', sans-serif;
-  font-size: 28px;
-  font-weight: 700;
-  line-height: 1;
-}
-
-.score-label {
-  font-size: 11px;
-  opacity: 0.75;
-}
-
-.progress-bar-wrap {
-  height: 5px;
-  background: var(--blue-dark);
-}
-
-.progress-bar-fill {
-  height: 5px;
-  background: white;
-  transition: width 0.4s ease;
-}
-
-.main {
-  max-width: 720px;
-  margin: 0 auto;
-  padding: 1.25rem var(--main-pad-x) 2rem;
-  box-sizing: border-box;
-  width: 100%;
-  min-width: 0;
-}
-
-.map-section {
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: 16px;
-  padding: 1.25rem 0.75rem 1rem;
-  margin-bottom: 1rem;
-  overflow: hidden;
-  max-width: 100%;
-  box-sizing: border-box;
-}
-
-.map-section-title {
-  font-size: 12px;
-  color: var(--text-muted);
-  margin-bottom: 1rem;
-  letter-spacing: 0.5px;
-  text-transform: uppercase;
-}
-
-.map-scroll {
-  overflow-x: auto;
-  overflow-y: hidden;
-  padding-bottom: 8px;
-  -webkit-overflow-scrolling: touch;
-  max-width: 100%;
-  min-width: 0;
-  overscroll-behavior-x: contain;
-}
-
-.line-map {
-  display: flex;
-  align-items: stretch;
-  width: max-content;
-  min-width: max-content;
-  max-width: none;
-  padding: 0 12px;
-}
-
 .station-wrap {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  flex-shrink: 0;
-}
-
-.station-wrap + .station-wrap {
-  margin-left: var(--station-gap);
+	--station-size: 12px;
+	--line-w: 6px;
 }
 
 .station-label {
-  min-height: 40px;
-  height: auto;
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--text);
-  white-space: normal;
-  text-align: center;
-  padding-bottom: 5px;
-  max-width: 5.2rem;
-  line-height: 1.25;
-  overflow-wrap: anywhere;
-  word-break: keep-all;
+	min-height: 40px;
+	height: auto;
+	display: flex;
+	align-items: flex-end;
+	justify-content: center;
+	font-size: 13px;
+	font-weight: 500;
+	color: inherit;
+	white-space: normal;
+	text-align: center;
+	padding-bottom: 5px;
+	max-width: 5.2rem;
+	line-height: 1.25;
+	overflow-wrap: anywhere;
+	word-break: keep-all;
 }
 
 .station-label.clickable {
-  cursor: pointer;
-  border: none;
-  background: none;
-  font: inherit;
-  border-radius: 6px;
-  padding: 3px 6px 5px;
-  transition: background 0.15s;
+	cursor: pointer;
+	border: none;
+	background: none;
+	font: inherit;
+	border-radius: 6px;
+	padding: 3px 6px 5px;
+	transition: background 0.15s;
 }
 
 .station-label.clickable:hover {
-  background: var(--blue-light);
-  color: var(--blue-dark);
+	background: var(--blue-light);
+	color: var(--blue-dark);
 }
 
 .station-label.clickable:active {
-  background: var(--blue-mid);
+	background: var(--blue-mid);
 }
 
 @keyframes labelSpeak {
-  0%,
-  100% {
-    background: var(--blue-light);
-  }
-  50% {
-    background: var(--blue-mid);
-  }
+	0%,
+	100% {
+		background: var(--blue-light);
+	}
+	50% {
+		background: var(--blue-mid);
+	}
 }
 
 .station-label.label-speaking {
-  animation: labelSpeak 0.5s ease-in-out 2;
+	animation: labelSpeak 0.5s ease-in-out 2;
 }
 
 .station-label.hidden-label {
-  align-items: center;
-  padding-bottom: 0;
+	align-items: center;
+	padding-bottom: 0;
 }
 
 .station-label.hidden-label span {
-  background: #ff6b00;
-  color: white;
-  padding: 2px 8px;
-  border-radius: 10px;
-  font-weight: 700;
-  font-size: 13px;
+	background: #ff6b00;
+	color: white;
+	padding: 2px 8px;
+	border-radius: 10px;
+	font-weight: 700;
+	font-size: 13px;
 }
 
 .dot-row {
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 20px;
-  width: 100%;
+	position: relative;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	height: 20px;
+	width: 100%;
 }
 
 .dot-row::before,
 .dot-row::after {
-  content: '';
-  position: absolute;
-  top: 50%;
-  height: var(--line-w);
-  background: var(--blue);
-  transform: translateY(-50%);
-  z-index: 0;
+	content: '';
+	position: absolute;
+	top: 50%;
+	height: var(--line-w);
+	background: var(--blue);
+	transform: translateY(-50%);
+	z-index: 0;
 }
 
 .dot-row::before {
-  left: 0;
-  width: 50%;
+	left: 0;
+	width: 50%;
 }
 
 .dot-row::after {
-  right: 0;
-  width: 50%;
+	right: 0;
+	width: 50%;
 }
 
 .station-wrap:first-child .dot-row::before {
-  display: none;
+	display: none;
 }
 
 .station-wrap:last-child .dot-row::after {
-  display: none;
+	display: none;
 }
 
 .station-dot {
-  width: var(--station-size);
-  height: var(--station-size);
-  border-radius: 50%;
-  background: white;
-  border: 3px solid var(--blue);
-  position: relative;
-  z-index: 2;
-  flex-shrink: 0;
-  transition: all 0.2s;
+	width: var(--station-size);
+	height: var(--station-size);
+	border-radius: 50%;
+	background: white;
+	border: 3px solid var(--blue);
+	position: relative;
+	z-index: 2;
+	flex-shrink: 0;
+	transition: all 0.2s;
 }
 
 .station-dot.terminal {
-  width: 16px;
-  height: 16px;
-  background: var(--blue);
-  border-color: white;
-  border-width: 2px;
+	width: 16px;
+	height: 16px;
+	background: var(--blue);
+	border-color: white;
+	border-width: 2px;
 }
 
 .station-dot.target {
-  width: 18px;
-  height: 18px;
-  background: #ff6b00;
-  border-color: white;
-  border-width: 2px;
-  box-shadow: 0 0 0 4px rgba(255, 107, 0, 0.2);
-  animation: pulse 1.4s ease-in-out infinite;
+	width: 18px;
+	height: 18px;
+	background: #ff6b00;
+	border-color: white;
+	border-width: 2px;
+	box-shadow: 0 0 0 4px rgba(255, 107, 0, 0.2);
+	animation: pulse 1.4s ease-in-out infinite;
 }
 
 @keyframes pulse {
-  0%,
-  100% {
-    box-shadow: 0 0 0 4px rgba(255, 107, 0, 0.25);
-  }
-  50% {
-    box-shadow: 0 0 0 8px rgba(255, 107, 0, 0.05);
-  }
-}
-
-.station-num {
-  font-size: 10px;
-  color: var(--blue);
-  margin-top: 5px;
-  font-family: 'Barlow Condensed', sans-serif;
-  font-weight: 600;
-  white-space: nowrap;
-}
-
-.question-card {
-  background: var(--blue-light);
-  border: 1px solid var(--blue-mid);
-  border-radius: 12px;
-  padding: 1rem 1.25rem;
-  margin-bottom: 1rem;
-}
-
-.question-text {
-  font-size: 22px;
-  font-weight: 700;
-  color: var(--blue-dark);
-  line-height: 1.5;
-}
-
-.question-hint {
-  font-size: 16px;
-  color: var(--blue-dark);
-  opacity: 0.8;
-  margin-top: 8px;
-  overflow-wrap: anywhere;
-  word-break: break-word;
-  line-height: 1.55;
+	0%,
+	100% {
+		box-shadow: 0 0 0 4px rgba(255, 107, 0, 0.25);
+	}
+	50% {
+		box-shadow: 0 0 0 8px rgba(255, 107, 0, 0.05);
+	}
 }
 
 @keyframes optHighlight {
-  0% {
-    filter: brightness(0.82) saturate(1.4);
-    transform: scale(1.04);
-  }
-  50% {
-    filter: brightness(0.75) saturate(1.6);
-    transform: scale(1.06);
-  }
-  100% {
-    filter: brightness(0.82) saturate(1.4);
-    transform: scale(1.04);
-  }
+	0% {
+		filter: brightness(0.82) saturate(1.4);
+		transform: scale(1.04);
+	}
+	50% {
+		filter: brightness(0.75) saturate(1.6);
+		transform: scale(1.06);
+	}
+	100% {
+		filter: brightness(0.82) saturate(1.4);
+		transform: scale(1.04);
+	}
 }
 
-.option-btn.speaking-highlight {
-  animation: optHighlight 0.5s ease-in-out 2;
-  outline: 3px solid rgba(0, 0, 0, 0.18);
-  outline-offset: 2px;
-}
-
-.opt-c0 {
-  background: #fff3cd;
-  border-color: #f0c040;
-  color: #5c4400;
-}
-
-.opt-c1 {
-  background: #d4edda;
-  border-color: #5cb87a;
-  color: #154e27;
-}
-
-.opt-c2 {
-  background: #d1ecf1;
-  border-color: #5ba7b5;
-  color: #0c4f5c;
-}
-
-.opt-c3 {
-  background: #f8d7da;
-  border-color: #e08090;
-  color: #6b1a24;
-}
-
-.opt-c0:hover:not(:disabled) {
-  background: #ffe8a0;
-  border-color: #d4a800;
-}
-
-.opt-c1:hover:not(:disabled) {
-  background: #b8dfc4;
-  border-color: #3a9a5c;
-}
-
-.opt-c2:hover:not(:disabled) {
-  background: #b0d8e0;
-  border-color: #3a8a98;
-}
-
-.opt-c3:hover:not(:disabled) {
-  background: #f0b8be;
-  border-color: #c05060;
-}
-
-.options-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-  margin-bottom: 1rem;
-}
-
-.option-btn {
-  background: var(--card);
-  border: 1.5px solid var(--border);
-  border-radius: 14px;
-  padding: 22px 12px;
-  font-family: inherit;
-  font-size: 22px;
-  font-weight: 700;
-  color: var(--text);
-  cursor: pointer;
-  transition: all 0.15s;
-  text-align: center;
-  line-height: 1.3;
-  min-height: 76px;
-}
-
-.option-btn:hover:not(:disabled) {
-  border-color: var(--blue);
-  background: var(--blue-light);
-  color: var(--blue-dark);
-  transform: translateY(-1px);
-}
-
-.option-btn.correct {
-  background: var(--correct-bg);
-  border-color: var(--correct);
-  color: var(--correct);
-}
-
-.option-btn.wrong {
-  background: var(--wrong-bg);
-  border-color: var(--wrong);
-  color: var(--wrong);
-}
-
-.option-btn.reveal {
-  background: var(--correct-bg);
-  border-color: var(--correct);
-  color: var(--correct);
-  opacity: 0.55;
-}
-
-.option-btn:disabled {
-  cursor: default;
-  transform: none;
-}
-
-.feedback {
-  border-radius: 10px;
-  padding: 12px 16px;
-  font-size: 14px;
-  font-weight: 500;
-  min-height: 44px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 1rem;
-}
-
-.feedback.empty {
-  background: transparent;
-  border: none;
-  min-height: 0;
-  margin-bottom: 0;
-  padding: 0;
-}
-
-.feedback.correct {
-  background: var(--correct-bg);
-  color: var(--correct);
-  border: 1px solid #a8d5bc;
-}
-
-.feedback.wrong {
-  background: var(--wrong-bg);
-  color: var(--wrong);
-  border: 1px solid #f5b8b8;
-}
-
-.feedback-icon {
-  font-size: 20px;
-  flex-shrink: 0;
-}
-
-.next-btn {
-  width: 100%;
-  padding: 13px;
-  background: var(--blue);
-  color: white;
-  border: none;
-  border-radius: 12px;
-  font-family: inherit;
-  font-size: 15px;
-  font-weight: 700;
-  cursor: pointer;
-  transition:
-    background 0.15s,
-    transform 0.1s;
-  letter-spacing: 0.5px;
-}
-
-.next-btn:hover {
-  background: var(--blue-dark);
-}
-
-.next-btn:active {
-  transform: scale(0.98);
-}
-
-.result-wrap {
-  text-align: center;
-  padding: 2rem 1rem 1rem;
-}
-
-.result-circle {
-  width: 120px;
-  height: 120px;
-  border-radius: 50%;
-  background: var(--blue);
-  margin: 0 auto 1.25rem;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  box-shadow: 0 4px 24px rgba(0, 112, 189, 0.3);
-}
-
-.result-num {
-  font-family: 'Barlow Condensed', sans-serif;
-  font-size: 40px;
-  font-weight: 700;
-  line-height: 1;
-}
-
-.result-denom {
-  font-size: 13px;
-  opacity: 0.8;
-}
-
-.result-title {
-  font-size: 22px;
-  font-weight: 700;
-  margin-bottom: 0.5rem;
-}
-
-.result-sub {
-  font-size: 14px;
-  color: var(--text-muted);
-  margin-bottom: 1.75rem;
-}
-
-.result-review {
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 1rem;
-  margin-bottom: 1.5rem;
-  text-align: left;
-}
-
-.review-title {
-  font-size: 13px;
-  color: var(--text-muted);
-  margin-bottom: 10px;
-}
-
-.review-item {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  row-gap: 4px;
-  gap: 8px;
-  padding: 6px 0;
-  font-size: 13px;
-  border-top: 1px solid var(--border);
-}
-
-.review-item:first-of-type {
-  border-top: none;
-}
-
-.review-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  flex-shrink: 0;
-}
-
-.review-dot.ok {
-  background: var(--correct);
-}
-
-.review-dot.ng {
-  background: var(--wrong);
-}
-
-.review-id {
-  color: var(--text-muted);
-  min-width: 36px;
-  font-size: 12px;
-}
-
-.review-name {
-  font-weight: 500;
-  min-width: 0;
-  flex: 1 1 120px;
-  overflow-wrap: anywhere;
-  word-break: break-word;
-}
-
-.review-flag {
-  margin-left: auto;
-  font-size: 12px;
-}
-
-.review-flag.ok-text {
-  color: var(--correct);
-}
-
-.review-flag.ng-text {
-  color: var(--wrong);
-}
-
-.restart-btn {
-  padding: 13px 40px;
-  background: var(--blue);
-  color: white;
-  border: none;
-  border-radius: 12px;
-  font-family: inherit;
-  font-size: 15px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: background 0.15s;
-}
-
-.restart-btn:hover {
-  background: var(--blue-dark);
-}
-
-.line-switch-bar {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 0.75rem;
-  font-size: 13px;
-  color: var(--text-muted);
-}
-
-.line-switch-bar select {
-  font-family: inherit;
-  font-size: 13px;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 6px 8px;
-  background: var(--card);
-  color: var(--text);
-  cursor: pointer;
-  max-width: min(100%, 320px);
-}
-
-.voice-bar {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 10px;
-  row-gap: 8px;
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 10px 14px;
-  margin-bottom: 1rem;
-  max-width: 100%;
-  box-sizing: border-box;
-}
-
-.voice-toggle {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 13px;
-  color: var(--text-muted);
-  cursor: pointer;
-  user-select: none;
-}
-
-.voice-toggle input[type='checkbox'] {
-  accent-color: var(--blue);
-  width: 15px;
-  height: 15px;
-  cursor: pointer;
-}
-
-.voice-toggle.on {
-  color: var(--blue-dark);
-  font-weight: 500;
-}
-
-.speak-btn {
-  background: var(--blue-light);
-  border: 1px solid var(--blue-mid);
-  border-radius: 8px;
-  color: var(--blue-dark);
-  font-family: inherit;
-  font-size: 13px;
-  font-weight: 500;
-  padding: 5px 12px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  transition: background 0.15s;
-  white-space: nowrap;
-}
-
-.speak-btn:hover:not(:disabled) {
-  background: var(--blue-mid);
-}
-
-.speak-btn:disabled {
-  opacity: 0.4;
-  cursor: default;
-}
-
-.speak-btn.speaking {
-  background: var(--blue);
-  color: white;
-  border-color: var(--blue-dark);
-}
-
-.voice-icon {
-  font-size: 15px;
-  line-height: 1;
-}
-
-.voice-sep {
-  width: 1px;
-  height: 20px;
-  background: var(--border);
-  flex-shrink: 0;
-}
-
-.speed-wrap {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 12px;
-  color: var(--text-muted);
-  margin-left: auto;
-}
-
-.speed-wrap select {
-  font-family: inherit;
-  font-size: 12px;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  padding: 3px 6px;
-  color: var(--text);
-  background: var(--card);
-  cursor: pointer;
-}
-
-.no-tts-notice {
-  font-size: 12px;
-  color: var(--text-muted);
-  background: #fffbe6;
-  border: 1px solid #ffe58f;
-  border-radius: 8px;
-  padding: 8px 12px;
-  margin-bottom: 1rem;
-  overflow-wrap: anywhere;
+.quiz-opt-speaking {
+	animation: optHighlight 0.5s ease-in-out 2;
+	outline: 3px solid rgba(0, 0, 0, 0.18);
+	outline-offset: 2px;
 }
 
 @media (max-width: 640px) {
-  .quiz-root {
-    --station-gap: 30px;
-    --main-pad-x: 0.75rem;
-  }
-
-  .header {
-    padding: 0.75rem var(--main-pad-x) 0.65rem;
-    gap: 10px;
-  }
-
-  .header-title {
-    font-size: 16px;
-    line-height: 1.3;
-  }
-
-  .header-sub {
-    font-size: 11px;
-    line-height: 1.35;
-    opacity: 0.88;
-  }
-
-  .line-badge {
-    width: 36px;
-    height: 36px;
-    font-size: 18px;
-  }
-
-  .score-num {
-    font-size: 24px;
-  }
-
-  .map-section-title {
-    font-size: 11px;
-    line-height: 1.4;
-  }
-
-  .station-label {
-    font-size: 12px;
-    max-width: 4.75rem;
-  }
-
-  .question-text {
-    font-size: 18px;
-  }
-
-  .question-hint {
-    font-size: 14px;
-  }
-
-  .voice-bar {
-    padding: 8px 10px;
-  }
-
-  .line-switch-bar {
-    font-size: 12px;
-    margin-bottom: 0.5rem;
-  }
-
-  .line-switch-bar select {
-    font-size: 12px;
-    max-width: 100%;
-    flex: 1 1 auto;
-  }
-
-  .speed-wrap {
-    margin-left: 0;
-    width: 100%;
-    justify-content: flex-start;
-  }
-
-  .feedback {
-    font-size: 13px;
-    flex-wrap: wrap;
-  }
+	.station-label {
+		font-size: 12px;
+		max-width: 4.75rem;
+	}
 }
-
-@media (max-width: 400px) {
-  .quiz-root {
-    --station-gap: 24px;
-    --main-pad-x: 0.5rem;
-  }
-
-  .options-grid {
-    grid-template-columns: 1fr;
-    gap: 8px;
-  }
-
-  .option-btn {
-    min-height: 56px;
-    font-size: 18px;
-    padding: 14px 10px;
-  }
-
-  .result-title {
-    font-size: 18px;
-    padding: 0 0.25rem;
-    overflow-wrap: anywhere;
-  }
-
-  .result-sub {
-    font-size: 13px;
-  }
-}
-
 </style>
