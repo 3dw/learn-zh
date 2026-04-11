@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { speakTextWithPreferredVoice, ZH_TW_PREFERRED_KEYWORDS } from '../utils/speechVoice'
+import { getPreferredZhTwFemaleVoice, getVoicesAsync } from '../utils/speechVoice'
 
 interface Station {
   name: string
@@ -61,8 +61,19 @@ const streak = ref(0)
 const showReward = ref(false)
 const totalAnswered = ref(0)
 
-function speak() {
-  speakTextWithPreferredVoice(question.value.correct.name, 'zh-TW', ZH_TW_PREFERRED_KEYWORDS)
+async function speak() {
+  if (typeof window === 'undefined' || !window.speechSynthesis) return
+  const voices = await getVoicesAsync()
+  const utterance = new SpeechSynthesisUtterance(question.value.correct.name)
+  utterance.lang = 'zh-TW'
+  utterance.rate = 0.85
+  const voice = getPreferredZhTwFemaleVoice(voices)
+  if (voice) {
+    utterance.voice = voice
+    utterance.lang = voice.lang
+  }
+  window.speechSynthesis.cancel()
+  window.speechSynthesis.speak(utterance)
 }
 
 function choose(station: Station) {

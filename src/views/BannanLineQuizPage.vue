@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { getPreferredZhTwVoice, getVoicesAsync } from '@/utils/speechVoice'
+import { getPreferredZhTwFemaleVoice, getVoicesAsync } from '@/utils/speechVoice'
 
 type Station = { id: string; name: string; pronunciation?: string; hint: string }
 type MetroLine = {
@@ -241,7 +241,7 @@ let speakSessionId = 0
 async function refreshZhVoice() {
   if (!ttsSupported) return
   const voices = await getVoicesAsync()
-  zhVoice.value = getPreferredZhTwVoice(voices)
+  zhVoice.value = getPreferredZhTwFemaleVoice(voices)
 }
 
 function stopSpeech() {

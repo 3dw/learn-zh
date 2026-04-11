@@ -13,7 +13,7 @@ const cards = [
   { chinese: '我渴了。', image: '/images/emotions/thirsty.webp' },
   { chinese: '我很不舒服。', image: '/images/emotions/not_feeling_well.webp' },
   { chinese: '我很專注。', image: '/images/emotions/focused.webp' },
-  { chinese: '我很分心。', image: '/images/emotions/distracted.webp' },
+  { chinese: '我會分心。', image: '/images/emotions/distracted.webp' },
   { chinese: '我很放心。', image: '/images/emotions/relieved.webp' },
   { chinese: '我很平靜。', image: '/images/emotions/calm.webp' },
   { chinese: '我很煩躁。', image: '/images/emotions/irritated.webp' },

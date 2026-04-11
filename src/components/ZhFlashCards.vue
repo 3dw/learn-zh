@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { getPreferredZhTwVoice, getVoicesAsync } from '@/utils/speechVoice'
+import { getPreferredZhTwFemaleVoice, getVoicesAsync } from '@/utils/speechVoice'
 
 export interface FlashCardItem {
   chinese: string
@@ -33,7 +33,7 @@ const speakChinese = async (text: string) => {
   utterance.rate = 0.9
 
   const voices = await getVoicesAsync()
-  const preferred = getPreferredZhTwVoice(voices)
+  const preferred = getPreferredZhTwFemaleVoice(voices)
   if (preferred) {
     utterance.voice = preferred
     utterance.lang = preferred.lang
@@ -54,7 +54,7 @@ const speakChinese = async (text: string) => {
   <section class="flashcards-page">
     <header class="page-header">
       <h1>{{ title }}</h1>
-      <p>有圖字卡｜點按喇叭朗讀中文（台灣口音優先）</p>
+      <p>有圖字卡｜點擊「朗讀」鈕可朗讀中文</p>
       <input v-model="searchQuery" class="search-input" placeholder="搜尋中文關鍵字" />
     </header>
 
