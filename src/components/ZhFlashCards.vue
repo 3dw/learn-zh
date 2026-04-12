@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import { useSpeechAvailability } from '@/composables/useSpeechAvailability'
 import { getPreferredZhTwFemaleVoice, getVoicesAsync } from '@/utils/speechVoice'
 
 export interface FlashCardItem {
@@ -14,6 +15,7 @@ const props = defineProps<{
 
 const searchQuery = ref('')
 const speakingText = ref('')
+const { voicePlaybackAvailable, voicePlaybackBlocked } = useSpeechAvailability()
 
 const filteredCards = computed(() => {
 	const query = searchQuery.value.trim()
@@ -22,7 +24,7 @@ const filteredCards = computed(() => {
 })
 
 const speakChinese = async (text: string) => {
-	if (typeof window === 'undefined' || !window.speechSynthesis) return
+	if (!voicePlaybackAvailable.value || typeof window === 'undefined' || !window.speechSynthesis) return
 	if (!text.trim()) return
 
 	window.speechSynthesis.cancel()
@@ -83,7 +85,8 @@ const speakChinese = async (text: string) => {
 					</p>
 					<button
 						type="button"
-						class="shrink-0 cursor-pointer rounded-full border-0 bg-emerald-600 px-3 py-1.5 text-sm text-white transition hover:bg-emerald-700"
+						class="shrink-0 rounded-full border-0 bg-emerald-600 px-3 py-1.5 text-sm text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-45"
+						:disabled="voicePlaybackBlocked"
 						@click="speakChinese(card.chinese)"
 					>
 						{{ speakingText === card.chinese ? '朗讀中...' : '朗讀' }}

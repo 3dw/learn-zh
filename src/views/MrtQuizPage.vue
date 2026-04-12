@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { useSpeechAvailability } from '@/composables/useSpeechAvailability'
 import { getPreferredZhTwFemaleVoice, getVoicesAsync } from '../utils/speechVoice'
 
 interface Station {
@@ -60,9 +61,10 @@ const score = ref(0)
 const streak = ref(0)
 const showReward = ref(false)
 const totalAnswered = ref(0)
+const { voicePlaybackAvailable, voicePlaybackBlocked } = useSpeechAvailability()
 
 async function speak() {
-	if (typeof window === 'undefined' || !window.speechSynthesis) return
+	if (!voicePlaybackAvailable.value || typeof window === 'undefined' || !window.speechSynthesis) return
 	const voices = await getVoicesAsync()
 	const utterance = new SpeechSynthesisUtterance(question.value.correct.name)
 	utterance.lang = 'zh-TW'
@@ -151,7 +153,8 @@ onMounted(() => {
 		>
 			<button
 				type="button"
-				class="mb-5 cursor-pointer rounded-lg border border-stone-300 bg-transparent px-4 py-1.5 text-base text-zinc-800 transition hover:border-emerald-500/80 dark:border-zinc-600 dark:text-zinc-200"
+				class="mb-5 rounded-lg border border-stone-300 bg-transparent px-4 py-1.5 text-base text-zinc-800 transition hover:border-emerald-500/80 disabled:cursor-not-allowed disabled:opacity-45 dark:border-zinc-600 dark:text-zinc-200"
+				:disabled="voicePlaybackBlocked"
 				@click="speak"
 			>
 				🔊 再聽一次

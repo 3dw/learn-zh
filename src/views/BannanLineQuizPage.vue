@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { useSpeechAvailability } from '@/composables/useSpeechAvailability'
 import { getPreferredZhTwFemaleVoice, getVoicesAsync } from '@/utils/speechVoice'
 
 type Station = { id: string; name: string; pronunciation?: string; hint: string }
@@ -244,6 +245,7 @@ let fwParticles: Array<{
 let fwRunning = false
 let fwRaf: number | null = null
 let speakSessionId = 0
+const { voicePlaybackAvailable, voicePlaybackBlocked } = useSpeechAvailability()
 
 async function refreshZhVoice() {
   if (!ttsSupported) return
@@ -285,7 +287,7 @@ function attachUtterance(
 }
 
 function speakText(text: string, onEnd?: () => void) {
-  if (!ttsSupported || !voiceEnabled.value || !zhVoice.value) {
+  if (!ttsSupported || !voicePlaybackAvailable.value || !voiceEnabled.value || !zhVoice.value) {
     onEnd?.()
     return
   }
@@ -299,7 +301,7 @@ function getSpokenStationName(name: string): string {
 }
 
 async function speakOptionsSequentially() {
-  if (!ttsSupported || !zhVoice.value || current.value >= pool.value.length) return
+  if (!ttsSupported || !voicePlaybackAvailable.value || !zhVoice.value || current.value >= pool.value.length) return
   const sessionId = ++speakSessionId
   replayBusy.value = true
   window.speechSynthesis.cancel()
@@ -333,7 +335,7 @@ async function speakOptionsSequentially() {
 }
 
 function speakStationLabel(name: string) {
-  if (!ttsSupported || !voiceEnabled.value || !zhVoice.value) return
+  if (!ttsSupported || !voicePlaybackAvailable.value || !voiceEnabled.value || !zhVoice.value) return
   labelFlashName.value = name
   window.setTimeout(() => {
     if (labelFlashName.value === name) labelFlashName.value = null
@@ -343,7 +345,7 @@ function speakStationLabel(name: string) {
 }
 
 function speakFeedback(isRight: boolean, name: string) {
-  if (!voiceEnabled.value || !ttsSupported) return
+  if (!voicePlaybackAvailable.value || !voiceEnabled.value || !ttsSupported) return
   const spokenName = getSpokenStationName(name)
   const msg = isRight ? `答對了！這站是${spokenName}` : `答錯了，正確答案是${spokenName}`
   speakText(msg)
@@ -502,6 +504,15 @@ watch(voiceEnabled, (on) => {
   if (!on) stopSpeech()
 })
 
+watch(voicePlaybackBlocked, (blocked) => {
+  if (blocked) {
+    voiceEnabled.value = false
+    stopSpeech()
+    return
+  }
+  voiceEnabled.value = true
+})
+
 watch(selectedLineKey, () => {
   const key = normalizeLineKey(selectedLineKey.value)
   if (selectedLineKey.value !== key) selectedLineKey.value = key
@@ -529,6 +540,9 @@ onMounted(() => {
   void refreshZhVoice()
   if (ttsSupported) {
     window.speechSynthesis.addEventListener('voiceschanged', refreshZhVoice)
+  }
+  if (voicePlaybackBlocked.value) {
+    voiceEnabled.value = false
   }
   initFireworks()
   if (shouldInitImmediately) initGame()
@@ -701,10 +715,11 @@ watch(fireworksCanvas, (c) => {
 				</select>
 			</div>
 			<div
-				v-if="!ttsSupported"
+				v-if="!ttsSupported || voicePlaybackBlocked"
 				class="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-slate-600 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-100"
 			>
-				此瀏覽器不支援語音播報功能，建議使用 Chrome 或 Edge。
+				<span v-if="!ttsSupported">此瀏覽器不支援語音播報功能，建議使用 Chrome 或 Edge。</span>
+				<span v-else>目前沒有可用的華語語音，語音題目與站名播放已停用。</span>
 			</div>
 			<div
 				v-else
@@ -771,9 +786,10 @@ watch(fireworksCanvas, (c) => {
 							<button
 								v-else
 								type="button"
-								class="station-label clickable"
+								class="station-label clickable disabled:cursor-not-allowed disabled:opacity-45"
 								:title="'點我聽讀：' + s.name"
 								:class="{ 'label-speaking': labelFlashName === s.name }"
+								:disabled="voicePlaybackBlocked || !voiceEnabled"
 								@click="speakStationLabel(s.name)"
 							>
 								{{ s.name }}

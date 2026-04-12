@@ -34,6 +34,7 @@
 /* 為固定頂欄預留空間（與 App 頂欄高度對齊） */
 #app {
 	--app-header-height: 7.25rem;
+	--app-banner-height: 0rem;
 	@apply w-full font-normal;
-	padding: calc(var(--app-header-height) + 1rem) 0 0;
+	padding: calc(var(--app-header-height) + var(--app-banner-height) + 1rem) 0 0;
 }
