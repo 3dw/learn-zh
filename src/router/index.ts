@@ -3,6 +3,11 @@ import HomeView from '../views/HomeView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
+  scrollBehavior(to, from) {
+    if (to.fullPath === from.fullPath) return false
+
+    return { left: 0, top: 0 }
+  },
   routes: [
     {
       path: '/',
