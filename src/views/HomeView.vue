@@ -33,6 +33,12 @@ const features = [
 		desc: '拍下身邊的任何物品，AI 立刻告訴你華文怎麼說。生活即教室，隨時隨地都能學華文。',
 	},
 	{
+		to: '/situations',
+		emoji: '🎭',
+		title: '情境識別互動題',
+		desc: '依據圖片與對話判斷情境，分級題型可持續擴充題庫與圖片。',
+	},
+	{
 		to: '/bannan-line-quiz',
 		emoji: '🚇',
 		title: '站名學習',
