@@ -58,7 +58,7 @@ onBeforeUnmount(() => {
 				<RouterLink to="/" :class="linkClass" :exact-active-class="exactActiveClass">
 					首頁
 				</RouterLink>
-				<RouterLink to="/situations" :class="linkClass" :exact-active-class="exactActiveClass">
+				<RouterLink to="/situations" v-if="false" :class="linkClass" :exact-active-class="exactActiveClass">
 					情境識別
 				</RouterLink>
 				<RouterLink to="/bannan-line-quiz" :class="linkClass" :exact-active-class="exactActiveClass">

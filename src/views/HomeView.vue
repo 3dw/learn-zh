@@ -37,6 +37,7 @@ const features = [
 		emoji: '🎭',
 		title: '情境識別互動題',
 		desc: '依據圖片與對話判斷情境，分級題型可持續擴充題庫與圖片。',
+		isPrototype: true,
 	},
 	{
 		to: '/bannan-line-quiz',
@@ -53,7 +54,7 @@ const features = [
 ]
 
 const cardClass =
-	'flex flex-col gap-2.5 rounded-xl border border-stone-200 bg-white/90 p-7 text-left text-zinc-700 no-underline shadow-sm transition hover:-translate-y-0.5 hover:border-emerald-500/80 hover:shadow-md dark:border-zinc-700 dark:bg-zinc-900/80 dark:text-zinc-200 dark:hover:border-emerald-400/70'
+	'relative flex flex-col gap-2.5 rounded-xl border border-stone-200 bg-white/90 p-7 text-left text-zinc-700 no-underline shadow-sm transition hover:-translate-y-0.5 hover:border-emerald-500/80 hover:shadow-md dark:border-zinc-700 dark:bg-zinc-900/80 dark:text-zinc-200 dark:hover:border-emerald-400/70'
 </script>
 
 <template>
@@ -71,6 +72,12 @@ const cardClass =
 		<section class="mt-8 grid gap-6 sm:grid-cols-2">
 			<div v-for="f in features" :key="f.to || f.href">
 				<RouterLink v-if="f.to" :to="f.to" :class="cardClass">
+					<span
+						v-if="f.isPrototype"
+						class="absolute right-3 top-3 rounded bg-yellow-300 px-2 py-0.5 text-xs font-bold text-black"
+					>
+						樣稿
+					</span>
 					<span class="text-3xl">{{ f.emoji }}</span>
 					<h2 class="text-xl font-semibold text-zinc-900 dark:text-zinc-100">
 						{{ f.title }}
@@ -81,6 +88,12 @@ const cardClass =
 					</span>
 				</RouterLink>
 				<a v-else :href="f.href" :class="cardClass" target="_blank" rel="noopener">
+					<span
+						v-if="f.isPrototype"
+						class="absolute right-3 top-3 rounded bg-yellow-300 px-2 py-0.5 text-xs font-bold text-black"
+					>
+						樣稿
+					</span>
 					<span class="text-3xl">{{ f.emoji }}</span>
 					<h2 class="text-xl font-semibold text-zinc-900 dark:text-zinc-100">
 						{{ f.title }}
