@@ -43,6 +43,11 @@ const router = createRouter({
       component: () => import('../views/SituationRecognitionPage.vue'),
     },
     {
+      path: '/situations/editor',
+      name: 'situations-editor',
+      component: () => import('../views/SituationEditorPage.vue'),
+    },
+    {
       path: '/bannan-line-quiz',
       name: 'bannan-line-quiz',
       component: () => import('../views/BannanLineQuizPage.vue'),
