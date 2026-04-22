@@ -32,11 +32,15 @@ function loadQuestions(): SituationQuestion[] {
 }
 
 function saveQuestions(list: SituationQuestion[]) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(list))
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(list))
+  } catch {
+    // localStorage quota exceeded or unavailable
+  }
 }
 
 const questions = ref<SituationQuestion[]>(loadQuestions())
-watch(questions, (val) => saveQuestions(val), { deep: true })
+watch(questions, (val) => saveQuestions(val), { deep: true, flush: 'sync' })
 
 // ── 等級選擇 ─────────────────────────────────────────────
 const selectedLevel = ref<SituationLevel>(1)

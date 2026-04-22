@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useSpeechAvailability } from '@/composables/useSpeechAvailability'
 import { getPreferredZhTwFemaleVoice, getVoicesAsync } from '@/utils/speechVoice'
 
@@ -20,7 +20,9 @@ const levels = [
   { value: 3 as const, label: '等級三', description: '看四格漫畫，選出最合適的答案。' },
 ]
 
-const questions: SituationQuestion[] = [
+const STORAGE_KEY = 'situation-questions'
+
+const builtinQuestions: SituationQuestion[] = [
   {
     id: '1-1',
     level: 1,
@@ -65,6 +67,40 @@ const questions: SituationQuestion[] = [
   },
 ]
 
+function loadStoredQuestions(): SituationQuestion[] {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY)
+    return raw ? JSON.parse(raw) : []
+  } catch {
+    return []
+  }
+}
+
+function mergeQuestions(): SituationQuestion[] {
+  const stored = loadStoredQuestions()
+  const storedIds = new Set(stored.map((q) => q.id))
+  const builtinFiltered = builtinQuestions.filter((q) => !storedIds.has(q.id))
+  return [...stored, ...builtinFiltered]
+}
+
+const questions = ref<SituationQuestion[]>(mergeQuestions())
+
+function onVisibilityChange() {
+  if (document.visibilityState !== 'visible') return
+  const prevLength = currentPool.value.length
+  questions.value = mergeQuestions()
+  if (currentPool.value.length !== prevLength || currentQuestionIndex.value >= currentPool.value.length) {
+    currentQuestionIndex.value = 0
+    answerState.value = 'idle'
+    selectedOption.value = null
+    completed.value = false
+    score.value = 0
+  }
+}
+
+onMounted(() => document.addEventListener('visibilitychange', onVisibilityChange))
+onUnmounted(() => document.removeEventListener('visibilitychange', onVisibilityChange))
+
 const selectedLevel = ref<SituationLevel>(1)
 const currentQuestionIndex = ref(0)
 const selectedOption = ref<string | null>(null)
@@ -74,7 +110,7 @@ const score = ref(0)
 const speakingText = ref('')
 const { voicePlaybackAvailable, voicePlaybackBlocked } = useSpeechAvailability()
 
-const currentPool = computed(() => questions.filter((item) => item.level === selectedLevel.value))
+const currentPool = computed(() => questions.value.filter((item) => item.level === selectedLevel.value))
 const currentQuestion = computed(() => currentPool.value[currentQuestionIndex.value] ?? null)
 const questionNumber = computed(() => currentQuestionIndex.value + 1)
 const totalQuestions = computed(() => currentPool.value.length)
@@ -210,10 +246,6 @@ function restart() {
               >
                 {{ speakingText === currentQuestion.prompt ? '朗讀中…' : '朗讀題目' }}
               </button>
-              <div v-if="currentQuestion.dialogue" class="rounded-3xl border border-stone-200 bg-stone-50 p-4 text-sm leading-7 text-zinc-700 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-200">
-                <p class="font-semibold text-zinc-900 dark:text-zinc-100">對話</p>
-                <p class="mt-2 whitespace-pre-line">{{ currentQuestion.dialogue }}</p>
-              </div>
             </div>
 
             <div class="overflow-hidden rounded-3xl border border-stone-200 bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-900">
@@ -255,7 +287,7 @@ function restart() {
               type="button"
               class="rounded-full bg-emerald-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
               :disabled="!hasAnswered"
-              @click="nextQuestion"
+              @click="completed ? restart() : nextQuestion()"
             >
               {{ completed ? '已完成！再玩一次' : currentQuestionIndex + 1 >= totalQuestions ? '完成測驗' : '下一題' }}
             </button>
