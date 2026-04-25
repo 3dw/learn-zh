@@ -22,10 +22,14 @@
 			功能介紹
 		</h2>
 		<ul class="list-disc space-y-2 pl-5 text-base text-zinc-700 dark:text-zinc-300">
-			<li><strong>自訂朗讀</strong> — 輸入任意華文，立即生成語音，反覆聆聽練習。</li>
-			<li><strong>三字經</strong> — 以千年經典為素材，節奏感強，適合入門打底。</li>
-			<li><strong>AI 圖片學</strong> — 拍下身邊物品，AI 即時告知華文名稱與用法。</li>
-			<li><strong>捷運站名測驗</strong> — 聽站名、猜路線，用台北捷運練習華文地名發音。</li>
+			<li><strong>AI 圖片學</strong> — 拍下身邊的任何物品，AI 立刻告訴你華文怎麼說。生活即教室，隨時隨地都能學華文。</li>
+			<li><strong>情境識別互動題</strong> — 依據圖片與對話判斷情境，分級題型可持續擴充題庫與圖片。</li>
+			<li><strong>捷運站名測驗</strong> — 聽站名、猜路線，用台北捷運練習華文地名發音。連續答對還有獎勵！</li>
+			<li><strong>自訂朗讀</strong> — 輸入任何華文文字，立即聆聽標準發音。反覆練習、聽說並進，讓口語越來越自然。</li>
+			<li><strong>萌典</strong> — 查詢華文單字、成語、詞組的釋義與用法。</li>
+			<li><strong>站名學習</strong> — 搭配路線圖與語音，認識台北捷運各站華文站名。以選擇題練習，輕鬆建立生活用字庫。</li>
+			<li><strong>華文字卡（Flashcards）</strong> — 用圖片搭配華文句子學習，支援台灣口音華文朗讀。可快速切換身體、情緒、在家情境與數字主題。</li>
+			<li><strong>兌幣練習</strong> — 拖拉硬幣到兌換區，練習硬幣面額換算，培養日常生活的數感與金錢概念。</li>
 		</ul>
 
 		<h2 class="mb-2 mt-8 text-xl font-semibold text-zinc-900 dark:text-zinc-100">
