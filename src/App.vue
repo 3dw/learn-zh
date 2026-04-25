@@ -58,17 +58,17 @@ onBeforeUnmount(() => {
 				<RouterLink to="/" :class="linkClass" :exact-active-class="exactActiveClass">
 					首頁
 				</RouterLink>
-				<RouterLink to="/situations" v-if="false" :class="linkClass" :exact-active-class="exactActiveClass">
-					情境識別
+				<RouterLink to="/what-is-this" :class="linkClass" :exact-active-class="exactActiveClass">
+					AI 圖片學
 				</RouterLink>
-				<RouterLink to="/bannan-line-quiz" :class="linkClass" :exact-active-class="exactActiveClass">
-					捷運站名
+				<RouterLink to="/situations" :class="linkClass" :exact-active-class="exactActiveClass">
+					情境識別
 				</RouterLink>
 				<RouterLink to="/mrt-quiz" :class="linkClass" :exact-active-class="exactActiveClass">
 					語音選站名
 				</RouterLink>
-				<RouterLink to="/voice-install-guide" :class="linkClass" :exact-active-class="exactActiveClass">
-					安裝語音
+				<RouterLink to="/custom" :class="linkClass" :exact-active-class="exactActiveClass">
+					自訂朗讀
 				</RouterLink>
 				<a
 					href="https://www.moedict.tw"
@@ -78,7 +78,9 @@ onBeforeUnmount(() => {
 				>
 					萌典
 				</a>
-
+				<RouterLink to="/bannan-line-quiz" :class="linkClass" :exact-active-class="exactActiveClass">
+					捷運站名
+				</RouterLink>
 				<details :class="flashcardsDropdownClass">
 					<summary
 						:class="[
@@ -103,13 +105,17 @@ onBeforeUnmount(() => {
 						</RouterLink>
 					</div>
 				</details>
-				<RouterLink to="/custom" :class="linkClass" :exact-active-class="exactActiveClass">
-					自訂朗讀
+				<a
+					href="https://freemath-5yx.pages.dev/coin-exchange"
+					target="_blank"
+					rel="noopener"
+					:class="linkClass"
+				>
+					兌幣練習
+				</a>
+				<RouterLink to="/voice-install-guide" :class="linkClass" :exact-active-class="exactActiveClass">
+					安裝語音
 				</RouterLink>
-				<RouterLink to="/what-is-this" :class="linkClass" :exact-active-class="exactActiveClass">
-					AI 圖片學
-				</RouterLink>
-				
 				<RouterLink to="/about" :class="linkClass" :exact-active-class="exactActiveClass">
 					關於
 				</RouterLink>
