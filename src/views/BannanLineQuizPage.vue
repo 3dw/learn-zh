@@ -209,7 +209,7 @@ function shuffleOptionPaletteIndices(): number[] {
 }
 
 const ttsSupported = typeof window !== 'undefined' && 'speechSynthesis' in window
-const voiceEnabled = ref(true)
+const voiceEnabled = ref(false)
 const speechRate = ref(0.85)
 const zhVoice = ref<SpeechSynthesisVoice | null>(null)
 const speakingOptionIndex = ref<number | null>(null)

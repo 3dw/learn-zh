@@ -96,7 +96,6 @@ function choose(station: Station) {
 function next() {
 	question.value = newQuestion()
 	selected.value = null
-	speak()
 }
 
 function dismissReward() {
@@ -104,9 +103,7 @@ function dismissReward() {
 	next()
 }
 
-onMounted(() => {
-	speak()
-})
+onMounted(() => {})
 </script>
 
 <template>
