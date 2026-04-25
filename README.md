@@ -70,3 +70,10 @@ npm run dev
 ```sh
 npm run build
 ```
+
+
+### Deploy this project
+
+```sh
+npm run deploy
+```
