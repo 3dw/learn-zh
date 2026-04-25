@@ -61,7 +61,7 @@ const cardClass =
 		<section class="px-2 py-10 text-center sm:py-12">
 			<div class="mb-2 text-5xl">🇹🇼</div>
 			<h1 class="mb-3 text-4xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100">
-				自主學華文
+				學齡前的早療小教室
 			</h1>
 			<p class="text-lg text-zinc-600 opacity-90 dark:text-zinc-300">
 				用最直覺的方式，讓華文學習融入每一天

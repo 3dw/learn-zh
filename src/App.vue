@@ -53,7 +53,7 @@ onBeforeUnmount(() => {
 			</div>
 		</div>
 		<div class="mx-auto max-w-7xl px-4 py-3 leading-snug">
-			<HelloWorld msg="自主學華文" />
+			<HelloWorld msg="學齡前的早療小教室" />
 			<nav class="mt-3 w-full text-center">
 				<RouterLink to="/" :class="linkClass" :exact-active-class="exactActiveClass">
 					首頁

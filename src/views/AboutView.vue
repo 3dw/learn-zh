@@ -6,7 +6,7 @@
 			關於本站
 		</h1>
 		<p class="mb-4 text-base text-zinc-700 dark:text-zinc-300">
-			<strong>自主學華文</strong> 是一個開放、免費的華文自學平台，
+			<strong>學齡前的早療小教室</strong> 是一個開放、免費的華文自學平台，
 			讓任何人都能隨時隨地透過聆聽、跟讀與 AI 輔助，輕鬆學習華文。
 		</p>
 

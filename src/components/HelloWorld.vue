@@ -16,7 +16,7 @@ defineProps<{
 			</h1>
 		</RouterLink>
 		<h3 class="text-lg text-zinc-600 dark:text-zinc-300">
-			聽、說、讀，隨時隨地開始你的華文之旅
+			單純想讓孩子好好講話
 		</h3>
 	</div>
 </template>
