@@ -93,16 +93,5 @@ const cardClass =
 			</div>
 		</section>
 
-		<div class="mt-16 flex flex-col items-center gap-3">
-			<img src="/ig-cover.jpg" alt="王大明" class="w-48 rounded-full opacity-80" />
-			<a
-				href="https://www.instagram.com/wang.da.ming"
-				target="_blank"
-				rel="noopener"
-				class="text-sm text-zinc-500 no-underline hover:text-pink-500 dark:text-zinc-400 dark:hover:text-pink-400"
-			>
-				ig: wang.da.ming
-			</a>
-		</div>
 	</main>
 </template>
