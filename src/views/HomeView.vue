@@ -17,7 +17,7 @@ const features = [
 	{
 		to: '/mrt-quiz',
 		emoji: '🚇',
-		title: '捷運站名測驗',
+		title: '語音選站名',
 		desc: '聽站名、猜路線，用台北捷運練習華文地名發音。連續答對還有獎勵！',
 	},
 	{
