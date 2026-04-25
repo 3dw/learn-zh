@@ -105,5 +105,9 @@ const cardClass =
 				</a>
 			</div>
 		</section>
+
+		<div class="mt-16 flex justify-center">
+			<img src="/ig-cover.jpg" alt="王大明" class="w-48 rounded-full opacity-80" />
+		</div>
 	</main>
 </template>
