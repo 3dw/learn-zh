@@ -79,7 +79,7 @@ onBeforeUnmount(() => {
 					萌典
 				</a>
 				<RouterLink to="/bannan-line-quiz" :class="linkClass" :exact-active-class="exactActiveClass">
-					捷運站名
+					站名學習
 				</RouterLink>
 				<details :class="flashcardsDropdownClass">
 					<summary
@@ -113,9 +113,6 @@ onBeforeUnmount(() => {
 				>
 					兌幣練習
 				</a>
-				<RouterLink to="/voice-install-guide" :class="linkClass" :exact-active-class="exactActiveClass">
-					安裝語音
-				</RouterLink>
 				<RouterLink to="/about" :class="linkClass" :exact-active-class="exactActiveClass">
 					關於
 				</RouterLink>
