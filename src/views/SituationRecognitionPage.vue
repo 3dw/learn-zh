@@ -319,7 +319,13 @@ function restart() {
       <section class="rounded-3xl border border-stone-200 bg-white p-6 text-sm text-zinc-700 shadow-sm dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-300">
         <h2 class="mb-3 text-base font-semibold text-zinc-900 dark:text-zinc-100">擴充題庫提示</h2>
         <ul class="space-y-2 list-disc pl-5">
-          <li>到「前往題庫編輯」頁面新增或修改題目，不需要手動改程式碼。</li>
+          <li>
+            到
+            <RouterLink to="/situations/editor" class="font-medium text-emerald-700 underline decoration-emerald-400 underline-offset-2 transition hover:text-emerald-600 dark:text-emerald-300 dark:decoration-emerald-500 dark:hover:text-emerald-200">
+              前往題庫編輯
+            </RouterLink>
+            頁面新增或修改題目，不需要手動改程式碼。
+          </li>
           <li>題庫會自動儲存在瀏覽器 <code class="rounded bg-zinc-100 px-1.5 py-0.5 dark:bg-zinc-800">localStorage</code>（key：<code class="rounded bg-zinc-100 px-1.5 py-0.5 dark:bg-zinc-800">situation-questions</code>）。</li>
           <li>作答頁會優先讀取你在題庫編輯頁儲存的內容。</li>
           <li>若本機尚未建立題庫，系統才會使用內建示範題目。</li>
