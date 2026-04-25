@@ -65,12 +65,6 @@ const cardClass =
 		<section class="mt-8 grid gap-6 sm:grid-cols-2">
 			<div v-for="f in features" :key="f.to || f.href">
 				<RouterLink v-if="f.to" :to="f.to" :class="cardClass">
-					<span
-						v-if="f.isPrototype"
-						class="absolute right-3 top-3 rounded bg-yellow-300 px-2 py-0.5 text-xs font-bold text-black"
-					>
-						樣稿
-					</span>
 					<span class="text-3xl">{{ f.emoji }}</span>
 					<h2 class="text-xl font-semibold text-zinc-900 dark:text-zinc-100">
 						{{ f.title }}
@@ -81,12 +75,6 @@ const cardClass =
 					</span>
 				</RouterLink>
 				<a v-else :href="f.href" :class="cardClass" target="_blank" rel="noopener">
-					<span
-						v-if="f.isPrototype"
-						class="absolute right-3 top-3 rounded bg-yellow-300 px-2 py-0.5 text-xs font-bold text-black"
-					>
-						樣稿
-					</span>
 					<span class="text-3xl">{{ f.emoji }}</span>
 					<h2 class="text-xl font-semibold text-zinc-900 dark:text-zinc-100">
 						{{ f.title }}
