@@ -43,9 +43,18 @@ const router = createRouter({
       component: () => import('../views/SituationRecognitionPage.vue'),
     },
     {
+      path: '/situations/editor/auth',
+      name: 'situations-editor-auth',
+      component: () => import('../views/SituationEditorAuthPage.vue'),
+    },
+    {
       path: '/situations/editor',
       name: 'situations-editor',
       component: () => import('../views/SituationEditorPage.vue'),
+      beforeEnter: (_to, _from, next) => {
+        if (sessionStorage.getItem('situation-editor-auth') === 'ok') next()
+        else next('/situations/editor/auth')
+      },
     },
     {
       path: '/bannan-line-quiz',

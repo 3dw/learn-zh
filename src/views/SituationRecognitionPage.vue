@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useSpeechAvailability } from '@/composables/useSpeechAvailability'
 import { getPreferredZhTwFemaleVoice, getVoicesAsync } from '@/utils/speechVoice'
 
@@ -14,15 +14,15 @@ interface SituationQuestion {
   answer: string
 }
 
-const STORAGE_KEY = 'situation-questions'
-
 const levels = [
   { value: 1 as const, label: '等級一', description: '看圖片，選出最合適的答案。' },
   { value: 2 as const, label: '等級二', description: '看圖片與對話，選出最合適的答案。' },
   { value: 3 as const, label: '等級三', description: '看四格漫畫，選出最合適的答案。' },
 ]
 
-const defaultQuestions: SituationQuestion[] = [
+const STORAGE_KEY = 'situation-questions'
+
+const builtinQuestions: SituationQuestion[] = [
   {
     id: '1-1',
     level: 1,
@@ -67,35 +67,39 @@ const defaultQuestions: SituationQuestion[] = [
   },
 ]
 
-function isValidQuestion(item: unknown): item is SituationQuestion {
-  if (!item || typeof item !== 'object') return false
-  const q = item as Partial<SituationQuestion>
-  return (
-    typeof q.id === 'string' &&
-    (q.level === 1 || q.level === 2 || q.level === 3) &&
-    typeof q.image === 'string' &&
-    typeof q.prompt === 'string' &&
-    Array.isArray(q.options) &&
-    q.options.every((option) => typeof option === 'string') &&
-    typeof q.answer === 'string' &&
-    (q.dialogue === undefined || typeof q.dialogue === 'string')
-  )
-}
-
-function loadQuestions(): SituationQuestion[] {
+function loadStoredQuestions(): SituationQuestion[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
-    if (!raw) return defaultQuestions
-    const parsed = JSON.parse(raw)
-    if (!Array.isArray(parsed)) return defaultQuestions
-    const normalized = parsed.filter(isValidQuestion)
-    return normalized.length > 0 ? normalized : defaultQuestions
+    return raw ? JSON.parse(raw) : []
   } catch {
-    return defaultQuestions
+    return []
   }
 }
 
-const questions = ref<SituationQuestion[]>(loadQuestions())
+function mergeQuestions(): SituationQuestion[] {
+  const stored = loadStoredQuestions()
+  const storedIds = new Set(stored.map((q) => q.id))
+  const builtinFiltered = builtinQuestions.filter((q) => !storedIds.has(q.id))
+  return [...stored, ...builtinFiltered]
+}
+
+const questions = ref<SituationQuestion[]>(mergeQuestions())
+
+function onVisibilityChange() {
+  if (document.visibilityState !== 'visible') return
+  const prevLength = currentPool.value.length
+  questions.value = mergeQuestions()
+  if (currentPool.value.length !== prevLength || currentQuestionIndex.value >= currentPool.value.length) {
+    currentQuestionIndex.value = 0
+    answerState.value = 'idle'
+    selectedOption.value = null
+    completed.value = false
+    score.value = 0
+  }
+}
+
+onMounted(() => document.addEventListener('visibilitychange', onVisibilityChange))
+onUnmounted(() => document.removeEventListener('visibilitychange', onVisibilityChange))
 
 const selectedLevel = ref<SituationLevel>(1)
 const currentQuestionIndex = ref(0)
@@ -193,22 +197,16 @@ function restart() {
   <main class="mx-auto max-w-5xl px-4 pb-12 pt-6">
     <section>
       <header class="mb-6">
-        <div class="flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <h1 class="text-3xl font-bold text-zinc-900 dark:text-zinc-100">情境識別互動題</h1>
-            <p class="mt-3 max-w-3xl text-base leading-7 text-zinc-600 dark:text-zinc-300">
-              依據圖片、對話或四格漫畫選出最適合的答案。題庫可持續擴充，請將新圖片放入
-              <code class="rounded bg-zinc-100 px-1.5 py-0.5 text-sm text-zinc-800 dark:bg-zinc-800 dark:text-zinc-100">public/images/situations</code>
-              ，再新增題目到頁面題庫。
-            </p>
-          </div>
-          <RouterLink
-            to="/situations/editor"
-            class="inline-flex items-center rounded-full border border-stone-300 bg-white px-4 py-2 text-sm font-medium text-zinc-700 transition hover:border-stone-400 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
-          >
-            前往題庫編輯
-          </RouterLink>
+        <div class="flex items-start justify-between gap-4">
+          <h1 class="text-3xl font-bold text-zinc-900 dark:text-zinc-100">情境識別互動題</h1>
+          <a
+            href="/situations/editor/auth"
+            class="shrink-0 text-xs text-zinc-400 transition hover:text-emerald-500 dark:text-zinc-600 dark:hover:text-emerald-400"
+          >🛠 自訂題庫</a>
         </div>
+        <p class="mt-3 max-w-3xl text-base leading-7 text-zinc-600 dark:text-zinc-300">
+          依據圖片、對話或四格漫畫選出最適合的答案。題庫可持續擴充。
+        </p>
       </header>
 
       <section class="mb-8 grid gap-3 sm:grid-cols-3">
@@ -252,10 +250,6 @@ function restart() {
               >
                 {{ speakingText === currentQuestion.prompt ? '朗讀中…' : '朗讀題目' }}
               </button>
-              <div v-if="currentQuestion.dialogue" class="rounded-3xl border border-stone-200 bg-stone-50 p-4 text-sm leading-7 text-zinc-700 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-200">
-                <p class="font-semibold text-zinc-900 dark:text-zinc-100">對話</p>
-                <p class="mt-2 whitespace-pre-line">{{ currentQuestion.dialogue }}</p>
-              </div>
             </div>
 
             <div class="overflow-hidden rounded-3xl border border-stone-200 bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-900">
@@ -297,7 +291,7 @@ function restart() {
               type="button"
               class="rounded-full bg-emerald-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
               :disabled="!hasAnswered"
-              @click="nextQuestion"
+              @click="completed ? restart() : nextQuestion()"
             >
               {{ completed ? '已完成！再玩一次' : currentQuestionIndex + 1 >= totalQuestions ? '完成測驗' : '下一題' }}
             </button>
@@ -316,21 +310,6 @@ function restart() {
         </div>
       </section>
 
-      <section class="rounded-3xl border border-stone-200 bg-white p-6 text-sm text-zinc-700 shadow-sm dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-300">
-        <h2 class="mb-3 text-base font-semibold text-zinc-900 dark:text-zinc-100">擴充題庫提示</h2>
-        <ul class="space-y-2 list-disc pl-5">
-          <li>
-            到
-            <RouterLink to="/situations/editor" class="font-medium text-emerald-700 underline decoration-emerald-400 underline-offset-2 transition hover:text-emerald-600 dark:text-emerald-300 dark:decoration-emerald-500 dark:hover:text-emerald-200">
-              前往題庫編輯
-            </RouterLink>
-            頁面新增或修改題目，不需要手動改程式碼。
-          </li>
-          <li>題庫會自動儲存在瀏覽器 <code class="rounded bg-zinc-100 px-1.5 py-0.5 dark:bg-zinc-800">localStorage</code>（key：<code class="rounded bg-zinc-100 px-1.5 py-0.5 dark:bg-zinc-800">situation-questions</code>）。</li>
-          <li>作答頁會優先讀取你在題庫編輯頁儲存的內容。</li>
-          <li>若本機尚未建立題庫，系統才會使用內建示範題目。</li>
-        </ul>
-      </section>
     </section>
   </main>
 </template>
