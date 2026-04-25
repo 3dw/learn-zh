@@ -3,24 +3,6 @@ import { RouterLink } from 'vue-router'
 
 const features = [
 	{
-		to: '/flashcards/body',
-		emoji: '🃏',
-		title: '華文字卡（Flashcards）',
-		desc: '用圖片搭配華文句子學習，支援台灣口音華文朗讀。可快速切換身體、情緒、在家情境與數字主題。',
-	},
-	{
-		href: 'https://www.moedict.tw',
-		emoji: '📚',
-		title: '萌典',
-		desc: '查詢華文單字、成語、詞組的釋義與用法。',
-	},
-	{
-		to: '/custom',
-		emoji: '🎙️',
-		title: '自訂朗讀',
-		desc: '輸入任何華文文字，立即聆聽標準發音。反覆練習、聽說並進，讓口語越來越自然。',
-	},
-	{
 		to: '/what-is-this',
 		emoji: '🤖',
 		title: 'AI 圖片學',
@@ -33,16 +15,34 @@ const features = [
 		desc: '依據圖片與對話判斷情境，分級題型可持續擴充題庫與圖片。',
 	},
 	{
+		to: '/mrt-quiz',
+		emoji: '🚇',
+		title: '捷運站名測驗',
+		desc: '聽站名、猜路線，用台北捷運練習華文地名發音。連續答對還有獎勵！',
+	},
+	{
+		to: '/custom',
+		emoji: '🎙️',
+		title: '自訂朗讀',
+		desc: '輸入任何華文文字，立即聆聽標準發音。反覆練習、聽說並進，讓口語越來越自然。',
+	},
+	{
+		href: 'https://www.moedict.tw',
+		emoji: '📚',
+		title: '萌典',
+		desc: '查詢華文單字、成語、詞組的釋義與用法。',
+	},
+	{
 		to: '/bannan-line-quiz',
 		emoji: '🚇',
 		title: '站名學習',
 		desc: '搭配路線圖與語音，認識台北捷運各站華文站名。以選擇題練習，輕鬆建立生活用字庫。',
 	},
 	{
-		to: '/mrt-quiz',
-		emoji: '🚇',
-		title: '捷運站名測驗',
-		desc: '聽站名、猜路線，用台北捷運練習華文地名發音。連續答對還有獎勵！',
+		to: '/flashcards/body',
+		emoji: '🃏',
+		title: '華文字卡（Flashcards）',
+		desc: '用圖片搭配華文句子學習，支援台灣口音華文朗讀。可快速切換身體、情緒、在家情境與數字主題。',
 	},
 ]
 
