@@ -17,6 +17,9 @@
 			語言學習不應受限於時間與地點。我們相信，只要有好的工具與足夠的練習，
 			每個人都能掌握台灣華文的基礎。
 		</p>
+		<p class="mb-4 text-base text-zinc-700 dark:text-zinc-300">
+			經歷過才知道身障兒家長的辛苦。祝福每一個遲緩的孩子，都有足夠的支持。
+		</p>
 
 		<h2 class="mb-2 mt-8 text-xl font-semibold text-zinc-900 dark:text-zinc-100">
 			功能介紹
@@ -35,7 +38,7 @@
 		<h2 class="mb-2 mt-8 text-xl font-semibold text-zinc-900 dark:text-zinc-100">
 			技術資訊
 		</h2>
-		<p class="text-base text-zinc-700 dark:text-zinc-300">
+		<p class="mb-4 text-base text-zinc-700 dark:text-zinc-300">
 			本站以 <strong>Vue 3</strong> 開發，部署於 <strong>Cloudflare Workers</strong>，
 			原始碼公開於
 			<a
@@ -47,6 +50,17 @@
 				GitHub
 			</a>，
 			歡迎貢獻與回饋。
+		</p>
+		<p class="text-base text-zinc-700 dark:text-zinc-300">
+			這個網站改編自
+			<a
+				href="https://zh.alearn.org.tw/"
+				target="_blank"
+				rel="noopener"
+				class="text-emerald-600 underline-offset-2 hover:underline dark:text-emerald-400"
+			>
+				自主學華文
+			</a>，相當感謝。
 		</p>
 	</div>
 </template>
