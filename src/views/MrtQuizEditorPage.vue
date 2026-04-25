@@ -22,7 +22,7 @@ const useCustom = ref(localStorage.getItem(STORAGE_USE_CUSTOM) === 'true')
 watch(stations, (val) => localStorage.setItem(STORAGE_STATIONS, JSON.stringify(val)), { deep: true })
 watch(useCustom, (val) => localStorage.setItem(STORAGE_USE_CUSTOM, String(val)))
 
-const canEnable = computed(() => stations.value.length >= 1)
+const canEnable = computed(() => stations.value.length >= 2)
 
 const nameInput = ref('')
 const lineInput = ref('')
@@ -95,13 +95,13 @@ function clearAll() {
 				</label>
 			</div>
 			<p v-if="!canEnable" class="mt-3 text-xs text-zinc-400">
-				新增至少 1 題即可啟用自訂題目。
+				新增至少 2 個選項，即可啟用自訂題目。
 			</p>
 		</section>
 
 		<!-- 新增題目表單 -->
 		<section class="mb-8 rounded-2xl border border-stone-200 bg-white p-5 shadow-sm dark:border-zinc-700 dark:bg-zinc-950">
-			<h2 class="mb-4 text-sm font-semibold text-zinc-700 dark:text-zinc-200">新增題目</h2>
+			<h2 class="mb-4 text-sm font-semibold text-zinc-700 dark:text-zinc-200">新增選項</h2>
 			<div class="flex flex-col gap-3">
 				<div>
 					<label class="mb-1 block text-xs font-medium text-zinc-500 dark:text-zinc-400">站名（答案）</label>
@@ -138,7 +138,7 @@ function clearAll() {
 		<section>
 			<div class="mb-3 flex items-center justify-between">
 				<h2 class="text-sm font-semibold text-zinc-700 dark:text-zinc-200">
-					自訂題目列表
+					自訂選項列表
 					<span class="ml-1 font-normal text-zinc-400">（{{ stations.length }} 題）</span>
 				</h2>
 				<button
