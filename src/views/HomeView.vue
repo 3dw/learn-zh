@@ -15,12 +15,6 @@ const features = [
 		desc: '查詢華文單字、成語、詞組的釋義與用法。',
 	},
 	{
-		to: '/three-character',
-		emoji: '📖',
-		title: '三字經',
-		desc: '從千年經典出發，三字一句，朗朗上口。在節奏中感受漢字之美，奠定紮實的文化根基。',
-	},
-	{
 		to: '/custom',
 		emoji: '🎙️',
 		title: '自訂朗讀',
@@ -37,7 +31,6 @@ const features = [
 		emoji: '🎭',
 		title: '情境識別互動題',
 		desc: '依據圖片與對話判斷情境，分級題型可持續擴充題庫與圖片。',
-		isPrototype: true,
 	},
 	{
 		to: '/bannan-line-quiz',

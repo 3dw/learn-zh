@@ -106,9 +106,6 @@ onBeforeUnmount(() => {
 				<RouterLink to="/custom" :class="linkClass" :exact-active-class="exactActiveClass">
 					自訂朗讀
 				</RouterLink>
-				<RouterLink to="/three-character" :class="linkClass" :exact-active-class="exactActiveClass">
-					三字經
-				</RouterLink>
 				<RouterLink to="/what-is-this" :class="linkClass" :exact-active-class="exactActiveClass">
 					AI 圖片學
 				</RouterLink>

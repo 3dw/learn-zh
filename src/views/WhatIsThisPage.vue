@@ -332,13 +332,10 @@ export default defineComponent({
 				const formData = new FormData()
 				formData.append('image', processedFile)
 
-				const response = await fetch(
-					'https://zh-en-backend.alearn13994229.workers.dev/detect-image-zh',
-					{
-						method: 'POST',
-						body: formData,
-					},
-				)
+				const response = await fetch('/api/detect-image-zh', {
+					method: 'POST',
+					body: formData,
+				})
 				const data = await response.json()
 
 				resultEn.value = data.descriptionEn || ''
