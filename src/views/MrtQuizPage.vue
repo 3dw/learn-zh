@@ -47,7 +47,7 @@ function loadActivePool(): Station[] {
 		if (!useCustom) return DEFAULT_STATIONS
 		const raw = localStorage.getItem(STORAGE_STATIONS)
 		const custom: Station[] = raw ? JSON.parse(raw) : []
-		return custom.length >= 4 ? custom : DEFAULT_STATIONS
+		return custom.length >= 1 ? custom : DEFAULT_STATIONS
 	} catch {
 		return DEFAULT_STATIONS
 	}

@@ -22,7 +22,7 @@ const useCustom = ref(localStorage.getItem(STORAGE_USE_CUSTOM) === 'true')
 watch(stations, (val) => localStorage.setItem(STORAGE_STATIONS, JSON.stringify(val)), { deep: true })
 watch(useCustom, (val) => localStorage.setItem(STORAGE_USE_CUSTOM, String(val)))
 
-const canEnable = computed(() => stations.value.length >= 4)
+const canEnable = computed(() => stations.value.length >= 1)
 
 const nameInput = ref('')
 const lineInput = ref('')
@@ -31,7 +31,6 @@ const formError = ref('')
 function addStation() {
 	formError.value = ''
 	if (!nameInput.value.trim()) { formError.value = '請填寫站名。'; return }
-	if (!lineInput.value.trim()) { formError.value = '請填寫路線名稱。'; return }
 	if (stations.value.some(s => s.name === nameInput.value.trim())) {
 		formError.value = '這個站名已存在。'; return
 	}
@@ -95,11 +94,8 @@ function clearAll() {
 					</span>
 				</label>
 			</div>
-			<p v-if="!canEnable && stations.length > 0" class="mt-3 text-xs text-amber-600 dark:text-amber-400">
-				需至少新增 4 題才能切換為自訂題目。
-			</p>
-			<p v-else-if="!canEnable" class="mt-3 text-xs text-zinc-400">
-				新增 4 題以上即可啟用自訂題目。
+			<p v-if="!canEnable" class="mt-3 text-xs text-zinc-400">
+				新增至少 1 題即可啟用自訂題目。
 			</p>
 		</section>
 
@@ -118,11 +114,11 @@ function clearAll() {
 					/>
 				</div>
 				<div>
-					<label class="mb-1 block text-xs font-medium text-zinc-500 dark:text-zinc-400">路線名稱（顯示於選項旁）</label>
+					<label class="mb-1 block text-xs font-medium text-zinc-500 dark:text-zinc-400">路線名稱（選填，顯示於選項旁）</label>
 					<input
 						v-model="lineInput"
 						type="text"
-						placeholder="例：板南線"
+						placeholder="例：板南線（可留空）"
 						class="w-full rounded-xl border border-stone-200 bg-white px-4 py-2.5 text-sm text-zinc-900 placeholder-zinc-400 focus:border-emerald-400 focus:outline-none dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
 						@keydown.enter="addStation"
 					/>
