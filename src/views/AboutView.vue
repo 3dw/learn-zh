@@ -49,7 +49,16 @@
 			>
 				GitHub
 			</a>，
-			歡迎貢獻與回饋。
+			歡迎貢獻與回饋，或透過
+				<a
+					href="https://www.instagram.com/wang.da.ming"
+					target="_blank"
+					rel="noopener"
+					class="text-emerald-600 underline-offset-2 hover:underline dark:text-emerald-400"
+				>
+					Instagram (@wang.da.ming)
+				</a>
+				與我們聯絡。
 		</p>
 		<p class="text-base text-zinc-700 dark:text-zinc-300">
 			這個網站改編自
