@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import { useSpeechAvailability } from '@/composables/useSpeechAvailability'
 import { getPreferredZhTwFemaleVoice, getVoicesAsync } from '@/utils/speechVoice'
 
@@ -13,8 +13,6 @@ interface SituationQuestion {
   options: string[]
   answer: string
 }
-
-const STORAGE_KEY = 'situation-questions'
 
 const levels = [
   { value: 1 as const, label: '等級一', description: '看圖片，選出最合適的答案。' },
@@ -67,35 +65,19 @@ const defaultQuestions: SituationQuestion[] = [
   },
 ]
 
-function isValidQuestion(item: unknown): item is SituationQuestion {
-  if (!item || typeof item !== 'object') return false
-  const q = item as Partial<SituationQuestion>
-  return (
-    typeof q.id === 'string' &&
-    (q.level === 1 || q.level === 2 || q.level === 3) &&
-    typeof q.image === 'string' &&
-    typeof q.prompt === 'string' &&
-    Array.isArray(q.options) &&
-    q.options.every((option) => typeof option === 'string') &&
-    typeof q.answer === 'string' &&
-    (q.dialogue === undefined || typeof q.dialogue === 'string')
-  )
-}
+const questions = ref<SituationQuestion[]>(defaultQuestions)
 
-function loadQuestions(): SituationQuestion[] {
+onMounted(async () => {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY)
-    if (!raw) return defaultQuestions
-    const parsed = JSON.parse(raw)
-    if (!Array.isArray(parsed)) return defaultQuestions
-    const normalized = parsed.filter(isValidQuestion)
-    return normalized.length > 0 ? normalized : defaultQuestions
+    const res = await fetch('/api/situations/questions')
+    const data = await res.json()
+    if (Array.isArray(data) && data.length > 0) {
+      questions.value = data
+    }
   } catch {
-    return defaultQuestions
+    // keep defaultQuestions
   }
-}
-
-const questions = ref<SituationQuestion[]>(loadQuestions())
+})
 
 const selectedLevel = ref<SituationLevel>(1)
 const currentQuestionIndex = ref(0)
@@ -197,9 +179,7 @@ function restart() {
           <div>
             <h1 class="text-3xl font-bold text-zinc-900 dark:text-zinc-100">情境識別互動題</h1>
             <p class="mt-3 max-w-3xl text-base leading-7 text-zinc-600 dark:text-zinc-300">
-              依據圖片、對話或四格漫畫選出最適合的答案。題庫可持續擴充，請將新圖片放入
-              <code class="rounded bg-zinc-100 px-1.5 py-0.5 text-sm text-zinc-800 dark:bg-zinc-800 dark:text-zinc-100">public/images/situations</code>
-              ，再新增題目到頁面題庫。
+              依據圖片、對話或四格漫畫選出最適合的答案。題庫可透過後台持續擴充，所有瀏覽器皆可同步看到最新題目。
             </p>
           </div>
           <RouterLink
@@ -316,21 +296,6 @@ function restart() {
         </div>
       </section>
 
-      <section class="rounded-3xl border border-stone-200 bg-white p-6 text-sm text-zinc-700 shadow-sm dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-300">
-        <h2 class="mb-3 text-base font-semibold text-zinc-900 dark:text-zinc-100">擴充題庫提示</h2>
-        <ul class="space-y-2 list-disc pl-5">
-          <li>
-            到
-            <RouterLink to="/situations/editor" class="font-medium text-emerald-700 underline decoration-emerald-400 underline-offset-2 transition hover:text-emerald-600 dark:text-emerald-300 dark:decoration-emerald-500 dark:hover:text-emerald-200">
-              前往題庫編輯
-            </RouterLink>
-            頁面新增或修改題目，不需要手動改程式碼。
-          </li>
-          <li>題庫會自動儲存在瀏覽器 <code class="rounded bg-zinc-100 px-1.5 py-0.5 dark:bg-zinc-800">localStorage</code>（key：<code class="rounded bg-zinc-100 px-1.5 py-0.5 dark:bg-zinc-800">situation-questions</code>）。</li>
-          <li>作答頁會優先讀取你在題庫編輯頁儲存的內容。</li>
-          <li>若本機尚未建立題庫，系統才會使用內建示範題目。</li>
-        </ul>
-      </section>
     </section>
   </main>
 </template>

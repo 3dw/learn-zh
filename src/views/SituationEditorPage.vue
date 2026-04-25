@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 
 type SituationLevel = 1 | 2 | 3
 
@@ -13,7 +13,8 @@ interface SituationQuestion {
   answer: string
 }
 
-const STORAGE_KEY = 'situation-questions'
+const SESSION_KEY = 'situation-editor-token'
+const API_URL = '/api/situations/questions'
 
 const levels: { value: SituationLevel; label: string; description: string }[] = [
   { value: 1, label: '等級一', description: '看圖片，選出最合適的答案。' },
@@ -21,22 +22,53 @@ const levels: { value: SituationLevel; label: string; description: string }[] = 
   { value: 3, label: '等級三', description: '看四格漫畫，選出最合適的答案。' },
 ]
 
-// ── 持久化 ──────────────────────────────────────────────
-function loadQuestions(): SituationQuestion[] {
+// ── 認證 ─────────────────────────────────────────────────
+const password = ref(sessionStorage.getItem(SESSION_KEY) ?? '')
+watch(password, (val) => sessionStorage.setItem(SESSION_KEY, val))
+
+// ── 題目狀態 ─────────────────────────────────────────────
+const questions = ref<SituationQuestion[]>([])
+const loading = ref(true)
+const saveStatus = ref<'idle' | 'saving' | 'ok' | 'error' | 'auth-error'>('idle')
+
+async function fetchQuestions() {
+  loading.value = true
   try {
-    const raw = localStorage.getItem(STORAGE_KEY)
-    return raw ? JSON.parse(raw) : []
+    const res = await fetch(API_URL)
+    const data = await res.json()
+    questions.value = Array.isArray(data) ? data : []
   } catch {
-    return []
+    questions.value = []
+  } finally {
+    loading.value = false
   }
 }
 
-function saveQuestions(list: SituationQuestion[]) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(list))
+async function persistQuestions() {
+  saveStatus.value = 'saving'
+  try {
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${password.value}`,
+      },
+      body: JSON.stringify(questions.value),
+    })
+    if (res.status === 401) {
+      saveStatus.value = 'auth-error'
+    } else if (res.ok) {
+      saveStatus.value = 'ok'
+      setTimeout(() => (saveStatus.value = 'idle'), 2000)
+    } else {
+      saveStatus.value = 'error'
+    }
+  } catch {
+    saveStatus.value = 'error'
+  }
 }
 
-const questions = ref<SituationQuestion[]>(loadQuestions())
-watch(questions, (val) => saveQuestions(val), { deep: true })
+onMounted(fetchQuestions)
 
 // ── 等級選擇 ─────────────────────────────────────────────
 const selectedLevel = ref<SituationLevel>(1)
@@ -60,27 +92,66 @@ const editingId = ref<string | null>(null)
 const imagePreview = ref<string>('')
 const fileInputRef = ref<HTMLInputElement | null>(null)
 const formError = ref('')
+const compressing = ref(false)
 
-watch(selectedLevel, () => {
-  resetForm()
-})
+watch(selectedLevel, () => { resetForm() })
 
-// ── 圖片上傳 ─────────────────────────────────────────────
+// ── 圖片壓縮 ─────────────────────────────────────────────
+async function compressImage(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const img = new Image()
+    const objectUrl = URL.createObjectURL(file)
+    img.onload = () => {
+      URL.revokeObjectURL(objectUrl)
+      const MAX_WIDTH = 800
+      const scale = img.width > MAX_WIDTH ? MAX_WIDTH / img.width : 1
+      const w = Math.round(img.width * scale)
+      const h = Math.round(img.height * scale)
+
+      const canvas = document.createElement('canvas')
+      canvas.width = w
+      canvas.height = h
+      const ctx = canvas.getContext('2d')!
+      ctx.drawImage(img, 0, 0, w, h)
+
+      const MAX_BYTES = 150 * 1024
+      let quality = 0.85
+      const tryExport = () => {
+        const dataUrl = canvas.toDataURL('image/jpeg', quality)
+        const bytes = Math.round((dataUrl.length * 3) / 4)
+        if (bytes <= MAX_BYTES || quality <= 0.3) {
+          resolve(dataUrl)
+        } else {
+          quality -= 0.1
+          tryExport()
+        }
+      }
+      tryExport()
+    }
+    img.onerror = reject
+    img.src = objectUrl
+  })
+}
+
 function triggerUpload() {
   fileInputRef.value?.click()
 }
 
-function handleImageUpload(event: Event) {
+async function handleImageUpload(event: Event) {
   const file = (event.target as HTMLInputElement).files?.[0]
   if (!file) return
-  const reader = new FileReader()
-  reader.onload = (e) => {
-    const result = e.target?.result as string
-    form.value.image = result
-    imagePreview.value = result
-  }
-  reader.readAsDataURL(file)
   if (fileInputRef.value) fileInputRef.value.value = ''
+
+  compressing.value = true
+  try {
+    const dataUrl = await compressImage(file)
+    form.value.image = dataUrl
+    imagePreview.value = dataUrl
+  } catch {
+    formError.value = '圖片處理失敗，請重試。'
+  } finally {
+    compressing.value = false
+  }
 }
 
 function removeImage() {
@@ -113,10 +184,11 @@ function validate(): boolean {
   if (!form.value.prompt.trim()) { formError.value = '請填寫題目說明。'; return false }
   if (form.value.options.some((o) => !o.trim())) { formError.value = '選項不可為空白。'; return false }
   if (!form.value.answer) { formError.value = '請選擇正確答案。'; return false }
+  if (!password.value.trim()) { formError.value = '請輸入後台密碼才能儲存。'; return false }
   return true
 }
 
-function saveQuestion() {
+async function saveQuestion() {
   if (!validate()) return
 
   if (editingId.value) {
@@ -138,7 +210,10 @@ function saveQuestion() {
     })
   }
 
-  resetForm()
+  await persistQuestions()
+  if (saveStatus.value !== 'auth-error' && saveStatus.value !== 'error') {
+    resetForm()
+  }
 }
 
 function editQuestion(q: SituationQuestion) {
@@ -155,9 +230,14 @@ function editQuestion(q: SituationQuestion) {
   window.scrollTo({ top: 0, behavior: 'smooth' })
 }
 
-function deleteQuestion(id: string) {
+async function deleteQuestion(id: string) {
+  if (!password.value.trim()) {
+    formError.value = '請輸入後台密碼才能刪除。'
+    return
+  }
   questions.value = questions.value.filter((q) => q.id !== id)
   if (editingId.value === id) resetForm()
+  await persistQuestions()
 }
 
 function resetForm() {
@@ -186,7 +266,7 @@ function exportJson() {
         <div>
           <h1 class="text-3xl font-bold text-zinc-900 dark:text-zinc-100">編輯題目</h1>
           <p class="mt-2 text-base leading-7 text-zinc-500 dark:text-zinc-400">
-            新增或修改情境識別題庫，資料儲存於瀏覽器 localStorage。
+            新增或修改情境識別題庫，資料儲存於雲端，所有瀏覽器皆可即時同步。
           </p>
         </div>
         <RouterLink
@@ -197,6 +277,35 @@ function exportJson() {
         </RouterLink>
       </div>
     </header>
+
+    <!-- 後台密碼 -->
+    <section class="mb-6 rounded-2xl border border-stone-200 bg-stone-50 px-5 py-4 dark:border-zinc-700 dark:bg-zinc-900">
+      <label class="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300">後台密碼</label>
+      <input
+        v-model="password"
+        type="password"
+        placeholder="輸入密碼後才能新增、修改、刪除題目"
+        class="w-full rounded-xl border border-stone-200 bg-white px-4 py-2.5 text-sm text-zinc-900 placeholder-zinc-400 focus:border-emerald-400 focus:outline-none dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100"
+      />
+      <p
+        v-if="saveStatus === 'auth-error'"
+        class="mt-2 text-xs text-rose-600 dark:text-rose-400"
+      >
+        密碼錯誤，請重新輸入。
+      </p>
+      <p
+        v-else-if="saveStatus === 'ok'"
+        class="mt-2 text-xs text-emerald-600 dark:text-emerald-400"
+      >
+        ✓ 已儲存至雲端
+      </p>
+      <p
+        v-else-if="saveStatus === 'error'"
+        class="mt-2 text-xs text-rose-600 dark:text-rose-400"
+      >
+        儲存失敗，請稍後再試。
+      </p>
+    </section>
 
     <!-- 等級切換 -->
     <section class="mb-8 grid gap-3 sm:grid-cols-3">
@@ -243,11 +352,13 @@ function exportJson() {
           <input ref="fileInputRef" type="file" accept="image/*" class="hidden" @change="handleImageUpload" />
           <button
             type="button"
-            class="inline-flex items-center gap-2 rounded-full border border-zinc-300 bg-white px-4 py-2 text-sm text-zinc-800 shadow-sm transition hover:border-zinc-400 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
+            :disabled="compressing"
+            class="inline-flex items-center gap-2 rounded-full border border-zinc-300 bg-white px-4 py-2 text-sm text-zinc-800 shadow-sm transition hover:border-zinc-400 disabled:opacity-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
             @click="triggerUpload"
           >
-            上傳圖片
+            {{ compressing ? '壓縮中…' : '上傳圖片' }}
           </button>
+          <p class="mt-1.5 text-xs text-zinc-400">圖片會自動壓縮至 150 KB 以內</p>
         </div>
 
         <!-- 題目說明 -->
@@ -284,7 +395,6 @@ function exportJson() {
               :key="index"
               class="flex items-center gap-2"
             >
-              <!-- 正確答案選擇 -->
               <button
                 type="button"
                 class="h-5 w-5 shrink-0 rounded-full border-2 transition"
@@ -335,10 +445,11 @@ function exportJson() {
         <div class="flex flex-wrap gap-3">
           <button
             type="button"
-            class="rounded-full bg-emerald-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-emerald-700"
+            :disabled="saveStatus === 'saving' || compressing"
+            class="rounded-full bg-emerald-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:opacity-60"
             @click="saveQuestion"
           >
-            {{ editingId ? '儲存修改' : '新增題目' }}
+            {{ saveStatus === 'saving' ? '儲存中…' : (editingId ? '儲存修改' : '新增題目') }}
           </button>
           <button
             v-if="editingId"
@@ -369,7 +480,11 @@ function exportJson() {
         </button>
       </div>
 
-      <div v-if="filteredQuestions.length === 0" class="rounded-3xl border border-stone-200 bg-stone-50 p-8 text-center text-sm text-zinc-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-400">
+      <div v-if="loading" class="rounded-3xl border border-stone-200 bg-stone-50 p-8 text-center text-sm text-zinc-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-400">
+        載入中…
+      </div>
+
+      <div v-else-if="filteredQuestions.length === 0" class="rounded-3xl border border-stone-200 bg-stone-50 p-8 text-center text-sm text-zinc-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-400">
         目前沒有題目，請從上方表單新增。
       </div>
 
