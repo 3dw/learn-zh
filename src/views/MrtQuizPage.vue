@@ -8,7 +8,10 @@ interface Station {
 	line: string
 }
 
-const ALL_STATIONS: Station[] = [
+const STORAGE_STATIONS = 'mrt-quiz-custom-stations'
+const STORAGE_USE_CUSTOM = 'mrt-quiz-use-custom'
+
+const DEFAULT_STATIONS: Station[] = [
 	// 板南線
 	...['頂埔','永寧','土城','海山','亞東醫院','府中','板橋','新埔','江子翠',
 		'龍山寺','西門','台北車站','善導寺','忠孝新生','忠孝復興','忠孝敦化',
@@ -38,6 +41,18 @@ const ALL_STATIONS: Station[] = [
 	].map(name => ({ name, line: '環狀線' })),
 ]
 
+function loadActivePool(): Station[] {
+	try {
+		const useCustom = localStorage.getItem(STORAGE_USE_CUSTOM) === 'true'
+		if (!useCustom) return DEFAULT_STATIONS
+		const raw = localStorage.getItem(STORAGE_STATIONS)
+		const custom: Station[] = raw ? JSON.parse(raw) : []
+		return custom.length >= 4 ? custom : DEFAULT_STATIONS
+	} catch {
+		return DEFAULT_STATIONS
+	}
+}
+
 function shuffle<T>(arr: T[]): T[] {
 	const a = [...arr]
 	for (let i = a.length - 1; i > 0; i--) {
@@ -47,10 +62,12 @@ function shuffle<T>(arr: T[]): T[] {
 	return a
 }
 
+let activePool = DEFAULT_STATIONS
+
 function newQuestion() {
-	const idx = Math.floor(Math.random() * ALL_STATIONS.length)
-	const correct = ALL_STATIONS[idx]!
-	const others = shuffle(ALL_STATIONS.filter((_, i) => i !== idx)).slice(0, 3)
+	const idx = Math.floor(Math.random() * activePool.length)
+	const correct = activePool[idx]!
+	const others = shuffle(activePool.filter((_, i) => i !== idx)).slice(0, 3)
 	const choices = shuffle([correct, ...others])
 	return { correct, choices }
 }
@@ -103,7 +120,10 @@ function dismissReward() {
 	next()
 }
 
-onMounted(() => {})
+onMounted(() => {
+	activePool = loadActivePool()
+	question.value = newQuestion()
+})
 </script>
 
 <template>
@@ -111,9 +131,15 @@ onMounted(() => {})
 		<h1 class="mb-1 text-3xl font-bold text-zinc-900 dark:text-zinc-100">
 			🚇 捷運站名測驗
 		</h1>
-		<p class="mb-6 text-base text-zinc-600 opacity-80 dark:text-zinc-400">
+		<p class="mb-3 text-base text-zinc-600 opacity-80 dark:text-zinc-400">
 			聽語音，選出正確的站名！
 		</p>
+		<RouterLink
+			to="/mrt-quiz/editor"
+			class="mb-6 inline-block text-xs text-zinc-400 underline-offset-2 transition hover:text-emerald-600 hover:underline dark:text-zinc-500 dark:hover:text-emerald-400"
+		>
+			⚙ 自訂題目
+		</RouterLink>
 
 		<div
 			v-if="showReward"

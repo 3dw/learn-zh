@@ -73,6 +73,11 @@ const router = createRouter({
       component: () => import('../views/MrtQuizPage.vue'),
     },
     {
+      path: '/mrt-quiz/editor',
+      name: 'mrt-quiz-editor',
+      component: () => import('../views/MrtQuizEditorPage.vue'),
+    },
+    {
       path: '/voice-install-guide',
       name: 'voice-install-guide',
       component: () => import('../views/VoiceInstallGuidePage.vue'),
