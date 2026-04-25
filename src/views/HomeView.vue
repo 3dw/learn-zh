@@ -44,6 +44,12 @@ const features = [
 		title: '華文字卡（Flashcards）',
 		desc: '用圖片搭配華文句子學習，支援台灣口音華文朗讀。可快速切換身體、情緒、在家情境與數字主題。',
 	},
+	{
+		href: 'https://freemath-5yx.pages.dev/coin-exchange',
+		emoji: '🪙',
+		title: '兌幣練習',
+		desc: '拖拉硬幣到兌換區，練習硬幣面額換算，培養日常生活的數感與金錢概念。',
+	},
 ]
 
 const cardClass =
