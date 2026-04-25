@@ -182,10 +182,20 @@ function exportJson() {
 <template>
   <main class="mx-auto max-w-5xl px-4 pb-16 pt-6">
     <header class="mb-6">
-      <h1 class="text-3xl font-bold text-zinc-900 dark:text-zinc-100">編輯題目</h1>
-      <p class="mt-2 text-base leading-7 text-zinc-500 dark:text-zinc-400">
-        新增或修改情境識別題庫，資料儲存於瀏覽器 localStorage。
-      </p>
+      <div class="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 class="text-3xl font-bold text-zinc-900 dark:text-zinc-100">編輯題目</h1>
+          <p class="mt-2 text-base leading-7 text-zinc-500 dark:text-zinc-400">
+            新增或修改情境識別題庫，資料儲存於瀏覽器 localStorage。
+          </p>
+        </div>
+        <RouterLink
+          to="/situations"
+          class="inline-flex items-center rounded-full border border-stone-300 bg-white px-4 py-2 text-sm font-medium text-zinc-700 transition hover:border-stone-400 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
+        >
+          前往情境作答
+        </RouterLink>
+      </div>
     </header>
 
     <!-- 等級切換 -->

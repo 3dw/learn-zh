@@ -14,13 +14,15 @@ interface SituationQuestion {
   answer: string
 }
 
+const STORAGE_KEY = 'situation-questions'
+
 const levels = [
   { value: 1 as const, label: '等級一', description: '看圖片，選出最合適的答案。' },
   { value: 2 as const, label: '等級二', description: '看圖片與對話，選出最合適的答案。' },
   { value: 3 as const, label: '等級三', description: '看四格漫畫，選出最合適的答案。' },
 ]
 
-const questions: SituationQuestion[] = [
+const defaultQuestions: SituationQuestion[] = [
   {
     id: '1-1',
     level: 1,
@@ -65,6 +67,36 @@ const questions: SituationQuestion[] = [
   },
 ]
 
+function isValidQuestion(item: unknown): item is SituationQuestion {
+  if (!item || typeof item !== 'object') return false
+  const q = item as Partial<SituationQuestion>
+  return (
+    typeof q.id === 'string' &&
+    (q.level === 1 || q.level === 2 || q.level === 3) &&
+    typeof q.image === 'string' &&
+    typeof q.prompt === 'string' &&
+    Array.isArray(q.options) &&
+    q.options.every((option) => typeof option === 'string') &&
+    typeof q.answer === 'string' &&
+    (q.dialogue === undefined || typeof q.dialogue === 'string')
+  )
+}
+
+function loadQuestions(): SituationQuestion[] {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY)
+    if (!raw) return defaultQuestions
+    const parsed = JSON.parse(raw)
+    if (!Array.isArray(parsed)) return defaultQuestions
+    const normalized = parsed.filter(isValidQuestion)
+    return normalized.length > 0 ? normalized : defaultQuestions
+  } catch {
+    return defaultQuestions
+  }
+}
+
+const questions = ref<SituationQuestion[]>(loadQuestions())
+
 const selectedLevel = ref<SituationLevel>(1)
 const currentQuestionIndex = ref(0)
 const selectedOption = ref<string | null>(null)
@@ -74,7 +106,7 @@ const score = ref(0)
 const speakingText = ref('')
 const { voicePlaybackAvailable, voicePlaybackBlocked } = useSpeechAvailability()
 
-const currentPool = computed(() => questions.filter((item) => item.level === selectedLevel.value))
+const currentPool = computed(() => questions.value.filter((item) => item.level === selectedLevel.value))
 const currentQuestion = computed(() => currentPool.value[currentQuestionIndex.value] ?? null)
 const questionNumber = computed(() => currentQuestionIndex.value + 1)
 const totalQuestions = computed(() => currentPool.value.length)
@@ -161,12 +193,22 @@ function restart() {
   <main class="mx-auto max-w-5xl px-4 pb-12 pt-6">
     <section>
       <header class="mb-6">
-        <h1 class="text-3xl font-bold text-zinc-900 dark:text-zinc-100">情境識別互動題</h1>
-        <p class="mt-3 max-w-3xl text-base leading-7 text-zinc-600 dark:text-zinc-300">
-          依據圖片、對話或四格漫畫選出最適合的答案。題庫可持續擴充，請將新圖片放入
-          <code class="rounded bg-zinc-100 px-1.5 py-0.5 text-sm text-zinc-800 dark:bg-zinc-800 dark:text-zinc-100">public/images/situations</code>
-          ，再新增題目到頁面題庫。
-        </p>
+        <div class="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h1 class="text-3xl font-bold text-zinc-900 dark:text-zinc-100">情境識別互動題</h1>
+            <p class="mt-3 max-w-3xl text-base leading-7 text-zinc-600 dark:text-zinc-300">
+              依據圖片、對話或四格漫畫選出最適合的答案。題庫可持續擴充，請將新圖片放入
+              <code class="rounded bg-zinc-100 px-1.5 py-0.5 text-sm text-zinc-800 dark:bg-zinc-800 dark:text-zinc-100">public/images/situations</code>
+              ，再新增題目到頁面題庫。
+            </p>
+          </div>
+          <RouterLink
+            to="/situations/editor"
+            class="inline-flex items-center rounded-full border border-stone-300 bg-white px-4 py-2 text-sm font-medium text-zinc-700 transition hover:border-stone-400 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
+          >
+            前往題庫編輯
+          </RouterLink>
+        </div>
       </header>
 
       <section class="mb-8 grid gap-3 sm:grid-cols-3">
@@ -277,10 +319,10 @@ function restart() {
       <section class="rounded-3xl border border-stone-200 bg-white p-6 text-sm text-zinc-700 shadow-sm dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-300">
         <h2 class="mb-3 text-base font-semibold text-zinc-900 dark:text-zinc-100">擴充題庫提示</h2>
         <ul class="space-y-2 list-disc pl-5">
-          <li>將新圖片放到 <code class="rounded bg-zinc-100 px-1.5 py-0.5 dark:bg-zinc-800">public/images/situations</code>。</li>
-          <li>在本頁面頂端的 <code class="rounded bg-zinc-100 px-1.5 py-0.5 dark:bg-zinc-800">questions</code> 陣列新增題目物件。</li>
-          <li>每題包含：`level`、`image`、`prompt`、`options`、`answer`。</li>
-          <li>未來可直接新增題目，不需要改變大部分的頁面邏輯。</li>
+          <li>到「前往題庫編輯」頁面新增或修改題目，不需要手動改程式碼。</li>
+          <li>題庫會自動儲存在瀏覽器 <code class="rounded bg-zinc-100 px-1.5 py-0.5 dark:bg-zinc-800">localStorage</code>（key：<code class="rounded bg-zinc-100 px-1.5 py-0.5 dark:bg-zinc-800">situation-questions</code>）。</li>
+          <li>作答頁會優先讀取你在題庫編輯頁儲存的內容。</li>
+          <li>若本機尚未建立題庫，系統才會使用內建示範題目。</li>
         </ul>
       </section>
     </section>
