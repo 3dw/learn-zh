@@ -372,17 +372,6 @@ function exportJson() {
           />
         </div>
 
-        <!-- 對話（等級二才顯示） -->
-        <div v-if="selectedLevel === 2">
-          <label class="mb-2 block text-sm font-medium text-zinc-700 dark:text-zinc-300">對話內容</label>
-          <textarea
-            v-model="form.dialogue"
-            rows="3"
-            placeholder="例：「你今天還好嗎？」「我沒事，謝謝你。」"
-            class="w-full rounded-2xl border border-stone-200 bg-white px-4 py-3 text-sm text-zinc-900 placeholder-zinc-400 focus:border-emerald-400 focus:outline-none dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
-          />
-        </div>
-
         <!-- 選項 -->
         <div>
           <label class="mb-2 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
