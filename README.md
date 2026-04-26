@@ -59,10 +59,16 @@ See [Vite Configuration Reference](https://vite.dev/config/).
 npm install
 ```
 
-### Compile and Hot-Reload for Development
+### 測試不包含API端點服務的網頁(Hot-reload)
 
 ```sh
 npm run dev
+```
+
+### 測試包含API端點服務的網頁 
+
+```sh 
+npm run preview
 ```
 
 ### Type-Check, Compile and Minify for Production

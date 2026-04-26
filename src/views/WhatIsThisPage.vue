@@ -117,6 +117,8 @@ export default defineComponent({
 	setup() {
 		const { voicePlaybackAvailable, voicePlaybackBlocked } = useSpeechAvailability()
 		const FAVORITES_KEY = 'en_love_arr'
+		const DETECT_IMAGE_API =
+			(import.meta.env.VITE_DETECT_IMAGE_API as string | undefined) ?? '/api/detect-image-zh'
 		const imagePreview = ref('')
 		const loading = ref(false)
 		const resultEn = ref('')
@@ -151,6 +153,11 @@ export default defineComponent({
 				reader.onerror = reject
 				reader.readAsDataURL(blob)
 			})
+
+		const toTraditionalChinese = async (text: string) => {
+			const { tify } = await import('chinese-conv/dist')
+			return tify(text)
+		}
 
 		const createLowResImage = async () => {
 			if (!imagePreview.value) return ''
@@ -332,14 +339,20 @@ export default defineComponent({
 				const formData = new FormData()
 				formData.append('image', processedFile)
 
-				const response = await fetch('/api/detect-image-zh', {
+				const response = await fetch(DETECT_IMAGE_API, {
 					method: 'POST',
 					body: formData,
 				})
+				if (!response.ok) {
+					const errorPayload = (await response.json().catch(() => ({}))) as { error?: string }
+					throw new Error(errorPayload.error || '圖片辨識請求失敗')
+				}
 				const data = await response.json()
 
 				resultEn.value = data.descriptionEn || ''
-				resultZh.value = data.descriptionZh || data.description || ''
+				resultZh.value = await toTraditionalChinese(
+					data.descriptionZh || data.description || '',
+				)
 			} catch (error) {
 				console.error('上傳圖片失敗:', error)
 			} finally {
