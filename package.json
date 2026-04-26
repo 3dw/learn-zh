@@ -13,13 +13,14 @@
 		"cf-typegen": "wrangler types"
 	},
 	"dependencies": {
+		"chinese-conv": "^3.2.2",
 		"heic2any": "^0.0.4",
 		"pica": "^9.0.1",
 		"vue": "^3.5.28",
 		"vue-router": "^5.0.2"
 	},
 	"devDependencies": {
-		"@cloudflare/vite-plugin": "^1.25.4",
+		"@cloudflare/vite-plugin": "^1.33.2",
 		"@tailwindcss/vite": "^4.2.2",
 		"@tsconfig/node24": "^24.0.4",
 		"@types/node": "^24.10.13",
@@ -32,7 +33,7 @@
 		"vite": "^7.3.1",
 		"vite-plugin-vue-devtools": "^8.0.6",
 		"vue-tsc": "^3.2.4",
-		"wrangler": "^4.68.0"
+		"wrangler": "^4.85.0"
 	},
 	"engines": {
 		"node": "^20.19.0 || >=22.12.0"
