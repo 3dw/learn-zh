@@ -8,16 +8,17 @@ import tailwindcss from '@tailwindcss/vite'
 import { cloudflare } from "@cloudflare/vite-plugin"
 
 // https://vite.dev/config/
-export default defineConfig({
+export default defineConfig(({ command }) => ({
 	plugins: [
 		tailwindcss(),
 		vue(),
 		vueDevTools(),
-		cloudflare()
+		// Work around Cloudflare plugin HMR crash on some Node/Vite combos.
+		...(command === 'serve' ? [] : [cloudflare()]),
 	],
 	resolve: {
 		alias: {
 			'@': fileURLToPath(new URL('./src', import.meta.url))
 		},
 	},
-})
+}))

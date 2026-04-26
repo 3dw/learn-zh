@@ -16,6 +16,9 @@
 	"compatibility_flags": [
 		"nodejs_compat"
 	],
+	"ai": {
+		"binding": "AI"
+	},
 	"kv_namespaces": [
 		{
 			"binding": "SITUATIONS_KV",
