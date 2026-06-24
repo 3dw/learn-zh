@@ -202,7 +202,7 @@ onMounted(() => {
 				鏤空書寫練習
 			</h1>
 			<p class="print-hidden mb-4 leading-relaxed text-stone-600 dark:text-zinc-300">
-				輸入想練習的字詞，系統會以萌典字圖呈現淡色字樣，用手指或滑鼠在格子中描寫即可。
+				輸入想練習的字詞，系統會以萌典字圖呈現淡色字樣，用手指、觸控筆或滑鼠在格子中描寫即可。
 			</p>
 
 			<section
