@@ -219,13 +219,6 @@ onMounted(() => {
 							@keyup.enter="applyWord"
 						/>
 					</label>
-					<button
-						type="button"
-						class="rounded bg-emerald-500 px-4 py-2 text-base font-medium text-white transition hover:opacity-90"
-						@click="applyWord"
-					>
-						產生練習
-					</button>
 
 					<label class="flex flex-col gap-1 text-sm text-stone-600 dark:text-zinc-300">
 						<span>字體</span>
@@ -240,6 +233,14 @@ onMounted(() => {
 							</optgroup>
 						</select>
 					</label>
+
+					<button
+						type="button"
+						class="rounded bg-emerald-500 px-4 py-2 text-base font-medium text-white transition hover:opacity-90"
+						@click="applyWord"
+					>
+						產生練習
+					</button>
 
 					<label class="flex flex-col gap-1 text-sm text-stone-600 dark:text-zinc-300">
 						<span>筆色</span>
