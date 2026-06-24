@@ -81,7 +81,7 @@ const PAGES: Record<string, PageHead> = {
 	},
 	'/writing-practice': {
 		title: '鏤空書寫練習',
-		description: '輸入字詞，以萌典字圖呈現淡色字樣與米字格，用手指或滑鼠描寫，從筆畫中熟悉漢字結構。',
+		description: '輸入字詞，以萌典字圖呈現鏤空字體，用手指或滑鼠描寫，從筆畫中熟悉漢字結構。',
 	},
 	'/writing-game': {
 		title: '書寫遊戲',
