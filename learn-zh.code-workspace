@@ -4,10 +4,7 @@
 			"path": "."
 		},
 		{
-			"path": "../zh-en"
-		},
-		{
-			"path": "../zh-en-backend"
+			"path": "../moedict.tw"
 		}
 	],
 	"settings": {}

@@ -112,7 +112,10 @@ onBeforeUnmount(() => {
 				<RouterLink to="/what-is-this" :class="linkClass" :exact-active-class="exactActiveClass">
 					AI 圖片學
 				</RouterLink>
-				
+				<RouterLink to="/writing-practice" :class="linkClass" :exact-active-class="exactActiveClass">
+					書寫練習
+				</RouterLink>
+
 				<RouterLink to="/about" :class="linkClass" :exact-active-class="exactActiveClass">
 					關於
 				</RouterLink>

@@ -33,6 +33,12 @@ const features = [
 		desc: '拍下身邊的任何物品，AI 立刻告訴你華文怎麼說。生活即教室，隨時隨地都能學華文。',
 	},
 	{
+		to: '/writing-practice',
+		emoji: '✍️',
+		title: '鏤空書寫練習',
+		desc: '輸入字詞，以萌典字圖呈現淡色字樣與米字格，用手指或滑鼠描寫，從筆畫中熟悉漢字結構。',
+	},
+	{
 		to: '/situations',
 		emoji: '🎭',
 		title: '情境識別互動題',
