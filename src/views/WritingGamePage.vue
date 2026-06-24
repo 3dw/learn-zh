@@ -1,76 +1,68 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, ref, watch } from 'vue'
-
-interface FontGroup {
-	label: string
-	fonts: { value: string; label: string }[]
-}
-
-const FONT_GROUPS: FontGroup[] = [
-	{
-		label: '全字庫',
-		fonts: [
-			{ value: 'kai', label: '楷書' },
-			{ value: 'sung', label: '宋體' },
-			{ value: 'ebas', label: '篆文' },
-		],
-	},
-	{
-		label: '源雲明體',
-		fonts: [
-			{ value: 'gwmel', label: '特細' },
-			{ value: 'gwml', label: '細體' },
-			{ value: 'gwmr', label: '標準' },
-			{ value: 'gwmm', label: '正明' },
-			{ value: 'gwmsb', label: '中明' },
-		],
-	},
-	{
-		label: 'Justfont',
-		fonts: [{ value: 'openhuninn', label: 'Open 粉圓' }],
-	},
-	{
-		label: 'cwTeX Q',
-		fonts: [
-			{ value: 'cwming', label: '明體' },
-			{ value: 'cwhei', label: '黑體' },
-			{ value: 'cwyuan', label: '圓體' },
-			{ value: 'cwkai', label: '楷書' },
-			{ value: 'cwfangsong', label: '仿宋' },
-		],
-	},
-	{
-		label: '王漢宗',
-		fonts: [
-			{ value: 'wt071', label: '中行書' },
-			{ value: 'wt021', label: '中隸書' },
-			{ value: 'wt064', label: '顏楷體' },
-			{ value: 'wt034', label: '勘亭流' },
-			{ value: 'wt040', label: '綜藝體' },
-		],
-	},
-]
+import { getWordPool, MAX_GRADE } from '../data/gradeWords'
+import { ZH_TW_PREFERRED_KEYWORDS, speakTextWithPreferredVoice } from '../utils/speechVoice'
 
 const IMAGE_SIZE = 220
+const GOAL = 10
 
-const inputWord = ref('測試')
-const word = ref('測試')
+const grade = ref(1)
 const font = ref('kai')
 const hollow = ref(true)
 const penColor = ref('#1b3859')
 const penWidth = ref(9)
 
+const word = ref('')
+const score = ref(0)
+const lastWord = ref('')
+
 const chars = computed(() => Array.from(word.value).filter((c) => c.trim() !== ''))
+const progressPct = computed(() => Math.min(100, (score.value / GOAL) * 100))
+const finished = computed(() => score.value >= GOAL)
+
+function pickWord() {
+	const pool = getWordPool(grade.value)
+	if (pool.length === 0) return
+	// 盡量避免連續出現同一個詞
+	let next = pool[Math.floor(Math.random() * pool.length)]
+	if (pool.length > 1) {
+		let guard = 0
+		while (next === lastWord.value && guard < 8) {
+			next = pool[Math.floor(Math.random() * pool.length)]
+			guard++
+		}
+	}
+	lastWord.value = next
+	word.value = next
+}
+
+function speakWord() {
+	if (!word.value) return
+	speakTextWithPreferredVoice(word.value, 'zh-TW', ZH_TW_PREFERRED_KEYWORDS)
+}
+
+function finishWord() {
+	if (finished.value) return
+	score.value += 1
+	if (score.value >= GOAL) return
+	pickWord()
+	clearAll()
+}
+
+function skipWord() {
+	pickWord()
+	clearAll()
+}
+
+function restart() {
+	score.value = 0
+	pickWord()
+	clearAll()
+}
 
 function charImgUrl(char: string): string {
 	const base = `https://www.moedict.tw/${encodeURIComponent(char)}.png`
 	return font.value === 'kai' ? base : `${base}?font=${font.value}`
-}
-
-function applyWord() {
-	const next = inputWord.value.trim()
-	if (!next) return
-	word.value = next
 }
 
 const canvasMap = new Map<number, HTMLCanvasElement>()
@@ -179,9 +171,9 @@ function clearAll() {
 	for (const canvas of canvasMap.values()) resetCanvas(canvas)
 }
 
-function handlePrint() {
-	window.print()
-}
+watch(grade, () => {
+	restart()
+})
 
 watch(chars, async () => {
 	await nextTick()
@@ -189,6 +181,7 @@ watch(chars, async () => {
 })
 
 onMounted(() => {
+	pickWord()
 	for (const canvas of canvasMap.values()) resetCanvas(canvas)
 })
 </script>
@@ -198,46 +191,23 @@ onMounted(() => {
 		class="min-h-dvh bg-gradient-to-br from-stone-100 via-amber-50/40 to-stone-200 px-4 py-6 dark:from-zinc-900 dark:via-zinc-900 dark:to-zinc-950"
 	>
 		<div class="mx-auto max-w-4xl">
-			<h1 class="print-hidden mb-2 text-3xl font-bold text-amber-950 dark:text-amber-100">
-				鏤空書寫練習
-			</h1>
-			<p class="print-hidden mb-4 leading-relaxed text-stone-600 dark:text-zinc-300">
-				輸入想練習的字詞，系統會以萌典字圖呈現淡色字樣，用手指或滑鼠在格子中描寫即可。
+			<h1 class="mb-2 text-3xl font-bold text-amber-950 dark:text-amber-100">書寫遊戲</h1>
+			<p class="mb-4 leading-relaxed text-stone-600 dark:text-zinc-300">
+				選擇年級程度，系統會隨機出現該年級（含）以下的常用生詞。<br/>在格子裡描寫完成後，按「我寫完了！」累積進度，集滿
+				{{ GOAL }} 分就有獎勵！
 			</p>
 
 			<section
-				class="print-hidden mb-4 rounded-lg border border-stone-200 bg-white/90 p-4 shadow-sm dark:border-zinc-700 dark:bg-zinc-900/90"
+				class="mb-4 rounded-lg border border-stone-200 bg-white/90 p-4 shadow-sm dark:border-zinc-700 dark:bg-zinc-900/90"
 			>
 				<div class="flex flex-wrap items-end gap-3">
 					<label class="flex flex-col gap-1 text-sm text-stone-600 dark:text-zinc-300">
-						<span>練習字詞</span>
-						<input
-							v-model="inputWord"
-							type="text"
-							class="w-48 rounded border border-stone-300 bg-white px-3 py-2 text-base text-zinc-900 outline-none ring-emerald-500/30 focus:border-emerald-500 focus:ring-2 dark:border-zinc-600 dark:bg-zinc-950 dark:text-zinc-100"
-							placeholder="例如：測試"
-							@keyup.enter="applyWord"
-						/>
-					</label>
-					<button
-						type="button"
-						class="rounded bg-emerald-500 px-4 py-2 text-base font-medium text-white transition hover:opacity-90"
-						@click="applyWord"
-					>
-						產生練習
-					</button>
-
-					<label class="flex flex-col gap-1 text-sm text-stone-600 dark:text-zinc-300">
-						<span>字體</span>
+						<span>年級程度</span>
 						<select
-							v-model="font"
+							v-model.number="grade"
 							class="rounded border border-stone-300 bg-white px-3 py-2 text-base text-zinc-900 dark:border-zinc-600 dark:bg-zinc-950 dark:text-zinc-100"
 						>
-							<optgroup v-for="group in FONT_GROUPS" :key="group.label" :label="group.label">
-								<option v-for="f in group.fonts" :key="f.value" :value="f.value">
-									{{ f.label }}
-								</option>
-							</optgroup>
+							<option v-for="g in MAX_GRADE" :key="g" :value="g">{{ g }} 年級</option>
 						</select>
 					</label>
 
@@ -254,30 +224,54 @@ onMounted(() => {
 						<span>筆畫粗細 {{ penWidth }}</span>
 						<input v-model.number="penWidth" type="range" min="3" max="20" class="w-32 cursor-pointer" />
 					</label>
-				</div>
 
-				<div class="mt-3 flex flex-wrap items-center gap-3">
 					<label
-						class="inline-flex items-center gap-2 text-sm font-normal text-stone-600 dark:text-zinc-300"
+						class="inline-flex items-center gap-2 self-end pb-2 text-sm font-normal text-stone-600 dark:text-zinc-300"
 					>
 						<input v-model="hollow" type="checkbox" />
-						鏤空（淡色）描寫模式
+						鏤空描寫模式
 					</label>
-					<button
-						type="button"
-						class="rounded border border-stone-300 bg-white px-3 py-1.5 text-sm text-stone-700 transition hover:bg-stone-100 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-700"
-						@click="clearAll"
-					>
-						清除全部
-					</button>
-					<button
-						type="button"
-						class="rounded border border-stone-300 bg-white px-3 py-1.5 text-sm text-stone-700 transition hover:bg-stone-100 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-700"
-						@click="handlePrint"
-					>
-						列印
-					</button>
 				</div>
+
+				<div class="mt-4">
+					<div class="mb-1 flex items-center justify-between text-sm font-medium text-stone-600 dark:text-zinc-300">
+						<span>進度</span>
+						<span>{{ score }} / {{ GOAL }} 分</span>
+					</div>
+					<div class="h-4 w-full overflow-hidden rounded-full bg-stone-200 dark:bg-zinc-800">
+						<div
+							class="h-full rounded-full bg-gradient-to-r from-emerald-400 to-emerald-600 transition-all duration-500"
+							:style="{ width: `${progressPct}%` }"
+						/>
+					</div>
+				</div>
+			</section>
+
+			<section
+				class="mb-4 flex flex-wrap items-center justify-center gap-3 rounded-lg border border-stone-200 bg-white/90 p-3 shadow-sm dark:border-zinc-700 dark:bg-zinc-900/90"
+			>
+				<span class="text-lg font-semibold text-amber-950 dark:text-amber-100">這次練習：{{ word }}</span>
+				<button
+					type="button"
+					class="rounded border border-stone-300 bg-white px-3 py-1.5 text-sm text-stone-700 transition hover:bg-stone-100 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-700"
+					@click="speakWord"
+				>
+					🔊 聽發音
+				</button>
+				<button
+					type="button"
+					class="rounded border border-stone-300 bg-white px-3 py-1.5 text-sm text-stone-700 transition hover:bg-stone-100 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-700"
+					@click="clearAll"
+				>
+					清除全部
+				</button>
+				<button
+					type="button"
+					class="rounded border border-stone-300 bg-white px-3 py-1.5 text-sm text-stone-700 transition hover:bg-stone-100 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-700"
+					@click="skipWord"
+				>
+					換一個詞
+				</button>
 			</section>
 
 			<section class="practice-grid flex flex-wrap justify-center gap-4">
@@ -310,13 +304,47 @@ onMounted(() => {
 					</div>
 					<button
 						type="button"
-						class="clear-cell-btn rounded border border-stone-300 bg-white px-2 py-1 text-xs text-stone-600 transition hover:bg-stone-100 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700"
+						class="rounded border border-stone-300 bg-white px-2 py-1 text-xs text-stone-600 transition hover:bg-stone-100 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700"
 						@click="clearOne(index)"
 					>
 						清除此字
 					</button>
 				</div>
 			</section>
+
+			<div class="mt-6 flex justify-center">
+				<button
+					type="button"
+					class="rounded-full bg-emerald-500 px-8 py-3 text-lg font-bold text-white shadow-md transition hover:opacity-90 active:scale-95"
+					@click="finishWord"
+				>
+					我寫完了！＋1 分
+				</button>
+			</div>
+		</div>
+
+		<!-- 獎勵畫面 -->
+		<div
+			v-if="finished"
+			class="fixed inset-0 z-[2000] flex items-center justify-center bg-black/60 px-4"
+		>
+			<div
+				class="reward-pop w-full max-w-md rounded-2xl border border-amber-200 bg-white p-8 text-center shadow-2xl dark:border-amber-900 dark:bg-zinc-900"
+			>
+				<div class="mb-3 text-7xl">🎉</div>
+				<h2 class="mb-2 text-3xl font-bold text-amber-600 dark:text-amber-300">太棒了！</h2>
+				<p class="mb-6 text-lg text-stone-600 dark:text-zinc-300">
+					你完成了 {{ GOAL }} 個生詞的書寫練習，繼續加油！
+				</p>
+				<div class="mb-6 text-5xl">🏆 ⭐ 🥇 ⭐ 🏆</div>
+				<button
+					type="button"
+					class="rounded-full bg-emerald-500 px-8 py-3 text-lg font-bold text-white shadow-md transition hover:opacity-90 active:scale-95"
+					@click="restart"
+				>
+					再玩一次
+				</button>
+			</div>
 		</div>
 	</div>
 </template>
@@ -345,11 +373,21 @@ onMounted(() => {
 	opacity: 0.32;
 }
 
-@media print {
-	.print-hidden,
-	.practice-canvas,
-	.clear-cell-btn {
-		display: none !important;
+@keyframes reward-pop {
+	0% {
+		transform: scale(0.7);
+		opacity: 0;
 	}
+	60% {
+		transform: scale(1.05);
+	}
+	100% {
+		transform: scale(1);
+		opacity: 1;
+	}
+}
+
+.reward-pop {
+	animation: reward-pop 0.4s ease-out;
 }
 </style>
