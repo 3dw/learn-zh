@@ -200,7 +200,7 @@ onMounted(() => {
 			<h1 class="mb-2 text-3xl font-bold text-amber-950 dark:text-amber-100">書寫遊戲</h1>
 			<p class="mb-4 leading-relaxed text-stone-600 dark:text-zinc-300">
 				選擇年級程度，系統會隨機出現該年級（含）以下的常用生詞。<br/>在格子裡描寫完成後，按「我寫完了！」累積進度，集滿
-				{{ GOAL }} 分就有獎勵！
+				{{ GOAL }} 分就有獎勵畫面！
 			</p>
 
 			<section
