@@ -41,7 +41,6 @@ onBeforeUnmount(() => {
 			</div>
 		</div>
 		<div class="mx-auto max-w-7xl px-4 py-3 leading-snug">
-			<HelloWorld msg="自主學華文" />
 			<Navbar />
 		</div>
 	</header>
