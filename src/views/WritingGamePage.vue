@@ -41,6 +41,11 @@ function speakWord() {
 	speakTextWithPreferredVoice(word.value, 'zh-TW', ZH_TW_PREFERRED_KEYWORDS)
 }
 
+function lookupWord() {
+	if (!word.value) return
+	window.open(`https://www.moedict.tw/${encodeURIComponent(word.value)}`, '_blank', 'noopener')
+}
+
 function finishWord() {
 	if (finished.value) return
 	score.value += 1
@@ -257,6 +262,13 @@ onMounted(() => {
 					@click="speakWord"
 				>
 					🔊 聽發音
+				</button>
+				<button
+					type="button"
+					class="rounded border border-stone-300 bg-white px-3 py-1.5 text-sm text-stone-700 transition hover:bg-stone-100 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-700"
+					@click="lookupWord"
+				>
+					📖 查字典
 				</button>
 				<button
 					type="button"
