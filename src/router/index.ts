@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import HomeView from '../views/HomeView.vue'
+import { applyHead } from '@/composables/useDocumentHead'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -108,6 +109,12 @@ const router = createRouter({
       component: () => import('../views/NumberPage.vue'),
     },
   ],
+})
+
+// Keep the document title & social meta in sync on client-side navigation.
+// (Initial loads are handled server-side by the Worker via src/heads.ts.)
+router.afterEach((to) => {
+  applyHead(to.path)
 })
 
 export default router
