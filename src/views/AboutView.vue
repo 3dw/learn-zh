@@ -22,10 +22,12 @@
 			功能介紹
 		</h2>
 		<ul class="list-disc space-y-2 pl-5 text-base text-zinc-700 dark:text-zinc-300">
-			<li><strong>自訂朗讀</strong> — 輸入任意華文，立即生成語音，反覆聆聽練習。</li>
-			<li><strong>三字經</strong> — 以千年經典為素材，節奏感強，適合入門打底。</li>
-			<li><strong>AI 圖片學</strong> — 拍下身邊物品，AI 即時告知華文名稱與用法。</li>
+			<li><strong>書寫練習</strong> — 輸入字詞，以萌典字圖呈現鏤空字體，用手指或滑鼠描寫，從筆畫中熟悉漢字結構。</li>
+			<li><strong>書寫遊戲</strong> — 選擇 1~6 年級程度，隨機練習國小常用生詞。寫完一個按按鈕累積進度，集滿分數就有獎勵畫面！</li>
+			<li><strong>AI 圖片學</strong> — 拍下身邊物品，AI 即時告知華文名稱與用法。</li>			
 			<li><strong>捷運站名測驗</strong> — 聽站名、猜路線，用台北捷運練習華文地名發音。</li>
+			<li><strong>三字經</strong> — 以千年經典為素材，節奏感強，適合入門打底。</li>
+			<li><strong>自訂朗讀</strong> — 輸入任意華文，立即生成語音，反覆聆聽練習。</li>
 		</ul>
 
 		<h2 class="mb-2 mt-8 text-xl font-semibold text-zinc-900 dark:text-zinc-100">
