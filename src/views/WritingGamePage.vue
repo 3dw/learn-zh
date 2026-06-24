@@ -24,11 +24,12 @@ function pickWord() {
 	const pool = getWordPool(grade.value)
 	if (pool.length === 0) return
 	// 盡量避免連續出現同一個詞
-	let next = pool[Math.floor(Math.random() * pool.length)]
+	const pick = () => pool[Math.floor(Math.random() * pool.length)] ?? pool[0]!
+	let next = pick()
 	if (pool.length > 1) {
 		let guard = 0
 		while (next === lastWord.value && guard < 8) {
-			next = pool[Math.floor(Math.random() * pool.length)]
+			next = pick()
 			guard++
 		}
 	}
