@@ -9,6 +9,47 @@
 				class="mb-4 rounded-lg border border-stone-200 bg-white/90 p-4 shadow-sm dark:border-zinc-700 dark:bg-zinc-900/90"
 			>
 				<div class="mb-2 text-xl font-bold text-stone-800 dark:text-stone-100">
+					匯入 / 匯出 JSON
+				</div>
+				<p class="mb-3 leading-relaxed text-stone-600 dark:text-zinc-300">
+					使用說明：匯出會把目前的「經文」與「同音字對照」一起存成一個 JSON 檔，方便保存或分享。匯入後會一次帶入經文與發音轉換，立即可以朗讀。
+				</p>
+				<div class="flex flex-wrap items-center gap-3">
+					<button
+						type="button"
+						class="rounded border-0 bg-amber-600 px-4 py-2 text-base font-medium text-white transition hover:opacity-90"
+						@click="exportJson"
+					>
+						匯出 JSON
+					</button>
+					<button
+						type="button"
+						class="rounded border-0 bg-stone-600 px-4 py-2 text-base font-medium text-white transition hover:opacity-90"
+						@click="triggerImport"
+					>
+						匯入 JSON
+					</button>
+					<input
+						ref="importInput"
+						type="file"
+						accept="application/json,.json"
+						class="hidden"
+						@change="importJson"
+					/>
+					<span
+						v-if="importMessage"
+						class="text-sm"
+						:class="importError ? 'text-red-600 dark:text-red-400' : 'text-emerald-600 dark:text-emerald-400'"
+					>
+						{{ importMessage }}
+					</span>
+				</div>
+			</section>
+
+			<section
+				class="mb-4 rounded-lg border border-stone-200 bg-white/90 p-4 shadow-sm dark:border-zinc-700 dark:bg-zinc-900/90"
+			>
+				<div class="mb-2 text-xl font-bold text-stone-800 dark:text-stone-100">
 					1) 輸入長篇文字
 				</div>
 				<p class="mb-3 leading-relaxed text-stone-600 dark:text-zinc-300">
@@ -104,6 +145,10 @@ const rawCsv = ref(`教,叫
 const isSpeaking = ref(false)
 const { voicePlaybackAvailable, voicePlaybackBlocked } = useSpeechAvailability()
 
+const importInput = ref<HTMLInputElement | null>(null)
+const importMessage = ref('')
+const importError = ref(false)
+
 const escapeRegExp = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 
 const csvParseResult = computed(() => {
@@ -191,6 +236,88 @@ const toggleSpeech = async () => {
 	window.speechSynthesis.cancel()
 	window.speechSynthesis.speak(await createUtterance())
 	isSpeaking.value = true
+}
+
+const exportJson = () => {
+	const homophones = Object.entries(csvParseResult.value.map).map(([original, replacement]) => ({
+		original,
+		replacement,
+	}))
+
+	const payload = {
+		version: 1,
+		text: rawText.value,
+		homophones,
+	}
+
+	const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' })
+	const url = URL.createObjectURL(blob)
+	const link = document.createElement('a')
+	link.href = url
+	link.download = 'custom-reading.json'
+	link.click()
+	URL.revokeObjectURL(url)
+
+	importError.value = false
+	importMessage.value = '已匯出 JSON 檔。'
+}
+
+const triggerImport = () => {
+	importInput.value?.click()
+}
+
+const homophonesToCsv = (homophones: unknown): string | null => {
+	if (!Array.isArray(homophones)) return null
+
+	const lines: string[] = []
+	for (const item of homophones) {
+		if (Array.isArray(item) && item.length >= 2) {
+			lines.push(`${String(item[0])},${String(item[1])}`)
+		} else if (item && typeof item === 'object') {
+			const { original, replacement } = item as Record<string, unknown>
+			if (original == null || replacement == null) return null
+			lines.push(`${String(original)},${String(replacement)}`)
+		} else {
+			return null
+		}
+	}
+	return lines.join('\n')
+}
+
+const importJson = (event: Event) => {
+	const input = event.target as HTMLInputElement
+	const file = input.files?.[0]
+	if (!file) return
+
+	const reader = new FileReader()
+	reader.onload = () => {
+		try {
+			const data = JSON.parse(String(reader.result))
+
+			if (typeof data?.text !== 'string') {
+				throw new Error('缺少 text 欄位')
+			}
+
+			const csv = homophonesToCsv(data.homophones ?? [])
+			if (csv === null) {
+				throw new Error('homophones 格式錯誤')
+			}
+
+			rawText.value = data.text
+			rawCsv.value = csv
+			importError.value = false
+			importMessage.value = '已匯入 JSON，可直接朗讀。'
+		} catch (error) {
+			importError.value = true
+			importMessage.value = `匯入失敗：${error instanceof Error ? error.message : '無法解析 JSON'}`
+		}
+	}
+	reader.onerror = () => {
+		importError.value = true
+		importMessage.value = '匯入失敗：無法讀取檔案'
+	}
+	reader.readAsText(file)
+	input.value = ''
 }
 
 onBeforeUnmount(() => {
