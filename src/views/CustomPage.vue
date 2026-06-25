@@ -9,6 +9,40 @@
 				class="mb-4 rounded-lg border border-stone-200 bg-white/90 p-4 shadow-sm dark:border-zinc-700 dark:bg-zinc-900/90"
 			>
 				<div class="mb-2 text-xl font-bold text-stone-800 dark:text-stone-100">
+					範例
+				</div>
+				<p class="mb-3 leading-relaxed text-stone-600 dark:text-zinc-300">
+					使用說明：選擇一個範例，系統會自動帶入經文與同音字對照，立即可以朗讀。
+				</p>
+				<div class="flex flex-wrap items-center gap-3">
+					<select
+						v-model="selectedExample"
+						class="rounded border border-stone-300 bg-white px-3 py-2 text-base text-zinc-900 outline-none ring-emerald-500/30 focus:border-emerald-500 focus:ring-2 dark:border-zinc-600 dark:bg-zinc-950 dark:text-zinc-100"
+						@change="loadExample"
+					>
+						<option value="">請選擇範例…</option>
+						<option
+							v-for="example in examples"
+							:key="example.file"
+							:value="example.file"
+						>
+							{{ example.label }}
+						</option>
+					</select>
+					<span
+						v-if="exampleMessage"
+						class="text-sm"
+						:class="exampleError ? 'text-red-600 dark:text-red-400' : 'text-emerald-600 dark:text-emerald-400'"
+					>
+						{{ exampleMessage }}
+					</span>
+				</div>
+			</section>
+
+			<section
+				class="mb-4 rounded-lg border border-stone-200 bg-white/90 p-4 shadow-sm dark:border-zinc-700 dark:bg-zinc-900/90"
+			>
+				<div class="mb-2 text-xl font-bold text-stone-800 dark:text-stone-100">
 					匯入 / 匯出 JSON
 				</div>
 				<p class="mb-3 leading-relaxed text-stone-600 dark:text-zinc-300">
@@ -178,6 +212,14 @@ const { voicePlaybackAvailable, voicePlaybackBlocked } = useSpeechAvailability()
 const importInput = ref<HTMLInputElement | null>(null)
 const importMessage = ref('')
 const importError = ref(false)
+
+const examples = [
+	{ label: '金剛經', file: '金剛經_1.json' },
+] as const
+
+const selectedExample = ref('')
+const exampleMessage = ref('')
+const exampleError = ref(false)
 
 const escapeRegExp = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 
@@ -390,6 +432,22 @@ const homophonesToCsv = (homophones: unknown): string | null => {
 	return lines.join('\n')
 }
 
+const applyImportedData = (data: unknown) => {
+	const payload = data as { text?: unknown; homophones?: unknown }
+	if (typeof payload?.text !== 'string') {
+		throw new Error('缺少 text 欄位')
+	}
+
+	const csv = homophonesToCsv(payload.homophones ?? [])
+	if (csv === null) {
+		throw new Error('homophones 格式錯誤')
+	}
+
+	stopSpeech()
+	rawText.value = payload.text
+	rawCsv.value = csv
+}
+
 const importJson = (event: Event) => {
 	const input = event.target as HTMLInputElement
 	const file = input.files?.[0]
@@ -398,20 +456,7 @@ const importJson = (event: Event) => {
 	const reader = new FileReader()
 	reader.onload = () => {
 		try {
-			const data = JSON.parse(String(reader.result))
-
-			if (typeof data?.text !== 'string') {
-				throw new Error('缺少 text 欄位')
-			}
-
-			const csv = homophonesToCsv(data.homophones ?? [])
-			if (csv === null) {
-				throw new Error('homophones 格式錯誤')
-			}
-
-			stopSpeech()
-			rawText.value = data.text
-			rawCsv.value = csv
+			applyImportedData(JSON.parse(String(reader.result)))
 			importError.value = false
 			importMessage.value = '已匯入 JSON，可直接朗讀。'
 		} catch (error) {
@@ -425,6 +470,28 @@ const importJson = (event: Event) => {
 	}
 	reader.readAsText(file)
 	input.value = ''
+}
+
+const loadExample = async () => {
+	const file = selectedExample.value
+	if (!file) return
+
+	exampleError.value = false
+	exampleMessage.value = '載入中…'
+
+	try {
+		const response = await fetch(`/examples/${encodeURIComponent(file)}`)
+		if (!response.ok) {
+			throw new Error(`HTTP ${response.status}`)
+		}
+
+		applyImportedData(await response.json())
+		exampleError.value = false
+		exampleMessage.value = '已載入範例，可直接朗讀。'
+	} catch (error) {
+		exampleError.value = true
+		exampleMessage.value = `載入失敗：${error instanceof Error ? error.message : '無法載入範例'}`
+	}
 }
 
 onBeforeUnmount(() => {
