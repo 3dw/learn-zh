@@ -274,7 +274,8 @@ const speakFrom = async (startIndex: number) => {
 
 	const speakIndex = (index: number) => {
 		if (session !== playbackSession) return
-		if (index >= segs.length) {
+		const seg = segs[index]
+		if (!seg) {
 			isSpeaking.value = false
 			isPaused.value = false
 			currentSegmentIndex.value = -1
@@ -282,7 +283,7 @@ const speakFrom = async (startIndex: number) => {
 		}
 
 		currentSegmentIndex.value = index
-		const text = segs[index].spoken.trim() || segs[index].display
+		const text = seg.spoken.trim() || seg.display
 		const utterance = new SpeechSynthesisUtterance(text)
 		utterance.lang = 'zh-TW'
 		utterance.rate = 0.9
