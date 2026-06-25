@@ -214,6 +214,7 @@ const importMessage = ref('')
 const importError = ref(false)
 
 const examples = [
+    { label: '論語_學而第一', file: '論語_學而第一.json' },
 	{ label: '金剛經', file: '金剛經_1.json' },
 ] as const
 
