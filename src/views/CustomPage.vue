@@ -92,29 +92,12 @@
 				class="mb-4 rounded-lg border border-stone-200 bg-white/90 p-4 shadow-sm dark:border-zinc-700 dark:bg-zinc-900/90"
 			>
 				<div class="mb-2 text-xl font-bold text-stone-800 dark:text-stone-100">
-					3) 檢查替換後內容
+					3) 分段朗讀（可從任一段開始）
 				</div>
 				<p class="mb-3 leading-relaxed text-stone-600 dark:text-zinc-300">
-					使用說明：這裡會顯示朗讀前實際送出的文字，方便先確認同音字替換是否符合預期。
+					使用說明：點任一段即可從該段開始朗讀，唸完會自動接續下一段，直到按「暫停」、「停止」或全部唸完，方便逐段校對。語音會優先使用 zh-TW 與台灣相關語音。
 				</p>
-				<textarea
-					v-model="speechText"
-					class="box-border w-full resize-y rounded border border-stone-300 bg-stone-50 p-2 font-inherit text-base text-zinc-900 dark:border-zinc-600 dark:bg-zinc-950 dark:text-zinc-100"
-					readonly
-					rows="4"
-				/>
-			</section>
-
-			<section
-				class="mb-4 rounded-lg border border-stone-200 bg-white/90 p-4 shadow-sm dark:border-zinc-700 dark:bg-zinc-900/90"
-			>
-				<div class="mb-2 text-xl font-bold text-stone-800 dark:text-stone-100">
-					4) 按鍵朗讀（台灣口音優先）
-				</div>
-				<p class="mb-3 leading-relaxed text-stone-600 dark:text-zinc-300">
-					使用說明：按「開始朗讀」播放，按「停止朗讀」可立即停止。語音會優先使用 zh-TW 與台灣相關語音。
-				</p>
-				<div class="flex flex-wrap items-center gap-3">
+				<div class="mb-3 flex flex-wrap items-center gap-3">
 					<button
 						type="button"
 						class="rounded border-0 px-4 py-2 text-base font-medium text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-45"
@@ -122,10 +105,55 @@
 						:disabled="voicePlaybackBlocked"
 						@click="toggleSpeech"
 					>
-						{{ isSpeaking ? '停止朗讀' : '開始朗讀' }}
+						{{ isSpeaking ? '停止朗讀' : '從頭朗讀' }}
+					</button>
+					<button
+						v-if="isSpeaking"
+						type="button"
+						class="rounded border-0 bg-amber-500 px-4 py-2 text-base font-medium text-white transition hover:opacity-90"
+						@click="togglePause"
+					>
+						{{ isPaused ? '繼續' : '暫停' }}
 					</button>
 					<span class="text-sm text-stone-600 dark:text-zinc-400">{{ statusText }}</span>
 				</div>
+				<p class="mb-2 text-sm text-stone-500 dark:text-zinc-400">
+					小提示：短按段落即可從該段開始朗讀；長按（或拖選）文字則進入選字校對，不會觸發朗讀。也可按左側編號朗讀。
+				</p>
+				<ol v-if="segments.length > 0" class="space-y-2">
+					<li
+						v-for="(seg, index) in segments"
+						:key="index"
+						class="flex w-full cursor-pointer select-text items-start gap-3 rounded border px-3 py-2 text-left transition"
+						:class="currentSegmentIndex === index
+							? 'border-emerald-500 bg-emerald-50 dark:border-emerald-400 dark:bg-emerald-950/40'
+							: 'border-stone-200 bg-white hover:border-emerald-300 hover:bg-stone-50 dark:border-zinc-700 dark:bg-zinc-900 dark:hover:border-emerald-700 dark:hover:bg-zinc-800'"
+						@pointerdown="onSegmentPointerDown"
+						@click="onSegmentClick(index, $event)"
+					>
+						<button
+							type="button"
+							class="mt-0.5 inline-flex h-6 w-6 flex-none items-center justify-center rounded-full text-sm font-bold disabled:cursor-not-allowed disabled:opacity-45"
+							:class="currentSegmentIndex === index
+								? 'bg-emerald-500 text-white'
+								: 'bg-stone-200 text-stone-700 dark:bg-zinc-700 dark:text-zinc-200'"
+							:disabled="voicePlaybackBlocked"
+							:title="`從第 ${index + 1} 段開始朗讀`"
+							@click.stop="speakFrom(index)"
+						>
+							{{ index + 1 }}
+						</button>
+						<span class="min-w-0 flex-1 select-text">
+							<span class="block select-text text-base text-zinc-900 dark:text-zinc-100">{{ seg.display }}</span>
+							<span
+								v-if="seg.spoken !== seg.display"
+								class="mt-0.5 block select-text text-sm text-stone-500 dark:text-zinc-400"
+							>
+								朗讀：{{ seg.spoken }}
+							</span>
+						</span>
+					</li>
+				</ol>
 			</section>
 		</div>
 	</div>
@@ -143,6 +171,8 @@ const rawCsv = ref(`教,叫
 為人子,危人子`)
 
 const isSpeaking = ref(false)
+const isPaused = ref(false)
+const currentSegmentIndex = ref(-1)
 const { voicePlaybackAvailable, voicePlaybackBlocked } = useSpeechAvailability()
 
 const importInput = ref<HTMLInputElement | null>(null)
@@ -194,48 +224,123 @@ const speechText = computed(() => {
 	return processedText
 })
 
-const statusText = computed(() => {
-	if (csvErrors.value.length > 0) return 'CSV 有格式錯誤，仍可朗讀原始可解析項目。'
-	return isSpeaking.value ? '朗讀中...' : '待命中'
+const segments = computed(() => {
+	const displays = rawText.value.split(/\r?\n/)
+	const spokens = speechText.value.split(/\r?\n/)
+
+	const result: { display: string; spoken: string }[] = []
+	displays.forEach((display, index) => {
+		const spoken = spokens[index] ?? display
+		if (!display.trim() && !spoken.trim()) return
+		result.push({ display, spoken })
+	})
+	return result
 })
 
-const createUtterance = async () => {
-	const voices = await getVoicesAsync()
-	const utterance = new SpeechSynthesisUtterance(speechText.value)
-	utterance.lang = 'zh-TW'
-	utterance.rate = 0.9
+const statusText = computed(() => {
+	if (csvErrors.value.length > 0) return 'CSV 有格式錯誤，仍可朗讀原始可解析項目。'
+	if (isPaused.value) return `已暫停（第 ${currentSegmentIndex.value + 1} 段）`
+	if (isSpeaking.value) return `朗讀中（第 ${currentSegmentIndex.value + 1} / ${segments.value.length} 段）...`
+	return '待命中'
+})
 
-	const preferredVoice = getPreferredVoice('zh-TW', ZH_TW_PREFERRED_KEYWORDS, voices)
-	if (preferredVoice) {
-		utterance.voice = preferredVoice
-		utterance.lang = preferredVoice.lang
+// Bumped on every new playback / stop so stale utterance callbacks can bail out.
+let playbackSession = 0
+
+const stopSpeech = () => {
+	playbackSession += 1
+	isSpeaking.value = false
+	isPaused.value = false
+	currentSegmentIndex.value = -1
+	if (typeof window !== 'undefined' && window.speechSynthesis) {
+		window.speechSynthesis.cancel()
 	}
-
-	utterance.onend = () => {
-		isSpeaking.value = false
-	}
-
-	utterance.onerror = () => {
-		isSpeaking.value = false
-	}
-
-	return utterance
 }
 
-const toggleSpeech = async () => {
+const speakFrom = async (startIndex: number) => {
 	if (!voicePlaybackAvailable.value || typeof window === 'undefined' || !window.speechSynthesis) return
 
-	if (isSpeaking.value) {
-		window.speechSynthesis.cancel()
-		isSpeaking.value = false
-		return
-	}
-
-	if (!speechText.value.trim()) return
+	const segs = segments.value
+	if (startIndex < 0 || startIndex >= segs.length) return
 
 	window.speechSynthesis.cancel()
-	window.speechSynthesis.speak(await createUtterance())
+	const session = ++playbackSession
 	isSpeaking.value = true
+	isPaused.value = false
+
+	const voices = await getVoicesAsync()
+	if (session !== playbackSession) return
+	const preferredVoice = getPreferredVoice('zh-TW', ZH_TW_PREFERRED_KEYWORDS, voices)
+
+	const speakIndex = (index: number) => {
+		if (session !== playbackSession) return
+		if (index >= segs.length) {
+			isSpeaking.value = false
+			isPaused.value = false
+			currentSegmentIndex.value = -1
+			return
+		}
+
+		currentSegmentIndex.value = index
+		const text = segs[index].spoken.trim() || segs[index].display
+		const utterance = new SpeechSynthesisUtterance(text)
+		utterance.lang = 'zh-TW'
+		utterance.rate = 0.9
+		if (preferredVoice) {
+			utterance.voice = preferredVoice
+			utterance.lang = preferredVoice.lang
+		}
+
+		utterance.onend = () => {
+			if (session !== playbackSession) return
+			speakIndex(index + 1)
+		}
+		utterance.onerror = () => {
+			if (session !== playbackSession) return
+			isSpeaking.value = false
+			isPaused.value = false
+			currentSegmentIndex.value = -1
+		}
+
+		window.speechSynthesis.speak(utterance)
+	}
+
+	speakIndex(startIndex)
+}
+
+const toggleSpeech = () => {
+	if (isSpeaking.value) {
+		stopSpeech()
+		return
+	}
+	speakFrom(0)
+}
+
+// Short tap → read the segment; long press (or drag) → let the browser select text for proofreading.
+const LONG_PRESS_MS = 350
+let pressStartTime = 0
+
+const onSegmentPointerDown = (event: PointerEvent) => {
+	pressStartTime = event.timeStamp
+}
+
+const onSegmentClick = (index: number, event: MouseEvent) => {
+	const selection = typeof window !== 'undefined' ? window.getSelection?.() : null
+	if (selection && !selection.isCollapsed && selection.toString().trim()) return
+	if (event.timeStamp - pressStartTime >= LONG_PRESS_MS) return
+	speakFrom(index)
+}
+
+const togglePause = () => {
+	if (typeof window === 'undefined' || !window.speechSynthesis || !isSpeaking.value) return
+
+	if (isPaused.value) {
+		window.speechSynthesis.resume()
+		isPaused.value = false
+	} else {
+		window.speechSynthesis.pause()
+		isPaused.value = true
+	}
 }
 
 const exportJson = () => {
@@ -303,6 +408,7 @@ const importJson = (event: Event) => {
 				throw new Error('homophones 格式錯誤')
 			}
 
+			stopSpeech()
 			rawText.value = data.text
 			rawCsv.value = csv
 			importError.value = false
@@ -321,7 +427,6 @@ const importJson = (event: Event) => {
 }
 
 onBeforeUnmount(() => {
-	if (typeof window === 'undefined' || !window.speechSynthesis) return
-	window.speechSynthesis.cancel()
+	stopSpeech()
 })
 </script>
