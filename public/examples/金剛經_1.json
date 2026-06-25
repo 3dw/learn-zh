@@ -20,7 +20,7 @@
     },
     {
       "original": "著地",
-      "replacement": "卓地"
+      "replacement": "卓第"
     },
     {
       "original": "白佛",
@@ -49,6 +49,23 @@
     {
       "original": "法相",
       "replacement": "法象"
+    },
+    {
+      "original": "我相",
+      "replacement": "我象"
+    },
+    {
+      "original": "人相",
+      "replacement": "人象"
+    },
+    {
+      "original": "眾生相",
+      "replacement": "眾生象"
+    },
+
+    {
+      "original": "壽者相",
+      "replacement": "壽者象"
     },
     {
       "original": "凡所有相",
