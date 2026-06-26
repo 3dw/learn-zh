@@ -114,7 +114,7 @@ const mobileGroupButtonClass =
 </script>
 
 <template>
-	<div ref="navRoot" class="mt-3 w-full">
+	<div ref="navRoot" class="nav-no-select mt-3 w-full">
 		<!-- 桌面：水平導航列 -->
 		<nav class="hidden w-full text-center md:block">
 			<RouterLink to="/" class="block">
@@ -270,3 +270,13 @@ const mobileGroupButtonClass =
 		</div>
 	</div>
 </template>
+
+<style scoped>
+/* 導航列只可點擊、不可選取，避免觸控時誤選文字 */
+.nav-no-select {
+	user-select: none;
+	-webkit-user-select: none;
+	-webkit-touch-callout: none;
+	-webkit-tap-highlight-color: transparent;
+}
+</style>

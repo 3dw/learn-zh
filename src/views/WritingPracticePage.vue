@@ -195,7 +195,7 @@ onMounted(() => {
 
 <template>
 	<div
-		class="min-h-dvh bg-gradient-to-br from-stone-100 via-amber-50/40 to-stone-200 px-4 py-6 dark:from-zinc-900 dark:via-zinc-900 dark:to-zinc-950"
+		class="writing-page min-h-dvh bg-gradient-to-br from-stone-100 via-amber-50/40 to-stone-200 px-4 py-6 dark:from-zinc-900 dark:via-zinc-900 dark:to-zinc-950"
 	>
 		<div class="mx-auto max-w-4xl">
 			<h1 class="print-hidden mb-2 text-3xl font-bold text-amber-950 dark:text-amber-100">
@@ -331,6 +331,21 @@ onMounted(() => {
 	-webkit-user-select: none;
 	-webkit-touch-callout: none;
 	-webkit-tap-highlight-color: transparent;
+}
+
+/* 整頁禁止選取：觸控筆書寫鏤空字時才不會誤選到其他文字或圖片 */
+.writing-page {
+	user-select: none;
+	-webkit-user-select: none;
+	-webkit-touch-callout: none;
+	-webkit-tap-highlight-color: transparent;
+}
+
+/* 輸入欄位仍可選取／編輯 */
+.writing-page input,
+.writing-page textarea {
+	user-select: text;
+	-webkit-user-select: text;
 }
 
 .practice-glyph {
